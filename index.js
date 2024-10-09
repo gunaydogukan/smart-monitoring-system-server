@@ -6,6 +6,7 @@ app.get('/', (req, res) => {
     res.send('Merhaba, Express!');
 });
 
+
 app.listen(port, () => {
     console.log(`Sunucu http://localhost:${port} adresinde çalışıyor`);
 });
