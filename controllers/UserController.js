@@ -65,6 +65,11 @@ const addAddress = async (req, res) => {
     try {
         const { plate, city, districts } = req.body;
 
+        const existingCity = await Cities.findOne({ where: { plate } });
+        if (existingCity) {
+            return res.status(400).json({ error: "Bu şehir zaten kayıtlı." });
+        }
+
         // Şehir ekle
         const newCity = await Cities.create({
             plate,
@@ -110,11 +115,12 @@ const addAddress = async (req, res) => {
 const addCompanies = async (req, res) => {
     try {
         const { code, name, city_id } = req.body;
+
         const existingCompany = await Company.findOne({ where: { code } });
         if (existingCompany) {
             return res.status(400).json({ error: "Bu kurum zaten kayıtlı." });
         }
-        // deneme
+
         const newCompany = await Company.create({
             code,
             name,
