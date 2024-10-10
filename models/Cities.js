@@ -18,6 +18,10 @@ const cities = sequelize.define("cities",{
         type: Sequelize.STRING,
         allowNull: false
     }
+
+} ,{ timestamps: true });
+=======
 },{ timestamps: true });
+
 
 module.exports = cities;
