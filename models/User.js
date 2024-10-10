@@ -1,6 +1,6 @@
 const Sequelize = require("sequelize");
 const sequelize = require('../config/database');
-const {DataTypes} = require("sequelize");
+const Companies = require('../models/companies');
 
 const User = sequelize.define('users', {
     id: {
@@ -10,11 +10,11 @@ const User = sequelize.define('users', {
         allowNull: false,
     },
     role: {
-        type: DataTypes.ENUM("administrator", "manager", "personal"),
+        type: Sequelize.ENUM("administrator", "manager", "personal"),
         allowNull: false,
     },
     creator_id: {
-        type: DataTypes.INTEGER,
+        type: Sequelize.INTEGER,
         allowNull: true,
         references: {
             model: "users",
@@ -22,6 +22,17 @@ const User = sequelize.define('users', {
         },
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
+    },
+    companyCode: {
+        type: Sequelize.STRING,
+        allowNull: true,
+        references: {
+            model: Companies,
+            key: "code",
+        },
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+
     },
     name: {
         type: Sequelize.STRING,
@@ -45,6 +56,7 @@ const User = sequelize.define('users', {
         allowNull: false,
         unique: true,
     },
+
 },{ timestamps: true });
 
 module.exports = User;
