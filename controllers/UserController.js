@@ -61,10 +61,18 @@ const login = async (req, res) => {
 
 
 const addAddress = async (req, res) => {
-
     try {
+        // Kullanıcı bilgilerini doğrula (örneğin, JWT token üzerinden)
+        const user = req.user; // req.user, doğrulanmış kullanıcıyı temsil eder (middleware tarafından ayarlanır)
+
+        // Eğer kullanıcı yoksa veya rolü "administrator" ya da "manager" değilse hata döner
+        if (!user || (user.role !== 'administrator' && user.role !== 'manager')) {
+            return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
+        }
+
         const { plate, city, districts } = req.body;
 
+        // Aynı plaka ile kayıtlı bir şehir varsa hata döner
         const existingCity = await Cities.findOne({ where: { plate } });
         if (existingCity) {
             return res.status(400).json({ error: "Bu şehir zaten kayıtlı." });
@@ -112,30 +120,49 @@ const addAddress = async (req, res) => {
         res.status(500).json({ error: "Adres ekleme sırasında bir hata oluştu." });
     }
 };
+
 const addCompanies = async (req, res) => {
     try {
+        // Kullanıcı bilgilerini doğrula (örneğin, JWT token üzerinden)
+        const user = req.user; // req.user, doğrulanmış kullanıcıyı temsil eder (middleware tarafından ayarlanır)
+
+        // Eğer kullanıcı yoksa veya rolü "administrator" değilse hata döner
+        if (!user || user.role !== 'administrator') {
+            return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
+        }
+
         const { code, name, city_id } = req.body;
 
+        // Eğer aynı code ile kayıtlı bir şirket varsa hata döner
         const existingCompany = await Company.findOne({ where: { code } });
         if (existingCompany) {
             return res.status(400).json({ error: "Bu kurum zaten kayıtlı." });
         }
 
+        // Yeni bir şirket oluştur
         const newCompany = await Company.create({
             code,
             name,
             city_id,
-            creator_id: 1,
+            creator_id: user.id, // Kullanıcı ID'si creator olarak atanıyor
         });
 
         res.status(201).json(newCompany);
     } catch (error) {
         console.log("Kayıt hatası:", error);
-        res.status(500).json({error: "Ekleme sırasında bir hata oluştu. "});
+        res.status(500).json({ error: "Ekleme sırasında bir hata oluştu." });
     }
-}
+};
 const addManager = async (req, res) => {
     try {
+        // Kullanıcı bilgilerini doğrula (örneğin, JWT token üzerinden)
+        const user = req.user; // req.user, doğrulanmış kullanıcıyı temsil eder (middleware tarafından ayarlanır)
+
+        // Eğer kullanıcı yoksa veya rolü "administrator" değilse hata döner
+        if (!user || user.role !== 'administrator') {
+            return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
+        }
+
         const { name, lastname, email, password, phone, companyCode, creator_id } = req.body;
 
         // Eğer aynı email ile kayıtlı bir kullanıcı varsa hata döner
@@ -162,8 +189,44 @@ const addManager = async (req, res) => {
         res.status(500).json({ error: "Manager ekleme sırasında bir hata oluştu." });
     }
 };
+const addPersonal = async (req, res) => {
+    try {
+        // Kullanıcı bilgilerini doğrula (örneğin, JWT token üzerinden)
+        const user = req.user; // req.user, doğrulanmış kullanıcıyı temsil eder (middleware tarafından ayarlanır)
 
-module.exports = { register, login, addAddress ,addCompanies , addManager};
+        // Eğer kullanıcı yoksa veya rolü "administrator" ya da "manager" değilse hata döner
+        if (!user || (user.role !== 'administrator' && user.role !== 'manager')) {
+            return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
+        }
+
+        const { name, lastname, email, password, phone, companyCode, creator_id } = req.body;
+
+        // Eğer aynı email ile kayıtlı bir kullanıcı varsa hata döner
+        const existingUser = await User.findOne({ where: { email } });
+        if (existingUser) {
+            return res.status(400).json({ error: "Bu email adresi zaten kayıtlı." });
+        }
+
+        // Yeni bir personal oluştur
+        const newPersonal = await User.create({
+            name,
+            lastname,
+            email,
+            password,
+            phone,
+            role: "personal",
+            creator_id,
+            companyCode,
+        });
+
+        res.status(201).json(newPersonal);
+    } catch (err) {
+        console.error("Personal ekleme hatası:", err);
+        res.status(500).json({ error: "Personal ekleme sırasında bir hata oluştu." });
+    }
+};
+
+module.exports = { register, login, addAddress ,addCompanies , addManager ,addPersonal};
 
 
 
