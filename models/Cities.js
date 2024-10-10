@@ -11,8 +11,6 @@ const cities = sequelize.define("cities",{
     },
     plate: {
         type: Sequelize.INTEGER,
-        primaryKey: true,
-        autoIncrement: true,
         unique: true,
         allowNull: false
     },
@@ -20,6 +18,6 @@ const cities = sequelize.define("cities",{
         type: Sequelize.STRING,
         allowNull: false
     }
-});
+},{ timestamps: true });
 
 module.exports = cities;

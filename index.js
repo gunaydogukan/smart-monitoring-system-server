@@ -12,7 +12,6 @@ app.use(express.json());
 app.use('/api', userRoutes);
 
 
-
 sequelize.sync({ force: false })
     .then(() => {
         console.log("Veritabanı ve tablolar başarıyla senkronize edildi.");
