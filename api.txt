@@ -1,0 +1,77 @@
+//http://localhost:5000/api/sensors
+{
+    "datacode": "D001",
+    "name": "Temperature and Humidity Sensor",
+    "lat": 41.7128,
+    "lng": 32.0060,
+    "def": "This sensor measures temperature and humidity levels.",
+    "type": 1,
+    "company_code": "Barü",
+    "creator_id": 1,
+    "village_id": 4
+}
+
+http://localhost:5000/api/type
+{
+        "type": "Yağmur"
+}
+
+//http://localhost:5000/api/companies
+{
+    "code": "74",
+    "name": "Bartın Elektrik Dağıtım",
+    "city_id": 4,
+    "creator_id": 1
+}
+
+//http://localhost:5000/api/address
+{
+    "plate": 34,
+    "city": "İstanbul",
+    "districts": [
+        {
+            "district": "Kadıköy",
+            "neighborhoods": [
+                {
+                    "neighborhood": "Moda",
+                    "villages": [
+                        "Köy 1",
+                        "Köy 2"
+                    ]
+                },
+                {
+                    "neighborhood": "Fikirtepe",
+                    "villages": []
+                }
+            ]
+        },
+        {
+            "district": "Beşiktaş",
+            "neighborhoods": [
+                {
+                    "neighborhood": "Levent",
+                    "villages": [
+                        "Köy 3"
+                    ]
+                }
+            ]
+        }
+    ]
+}
+
+//http://localhost:5000/api/register
+{
+    "name": "Dogukan",
+    "lastname": "Kaya",
+    "email": "dogukan@example.com",
+    "password": "password123",
+    "phone": "1234567890",
+    "role": "personal",
+    "creator_id": null
+}
+
+//http://localhost:5000/api/login
+{
+	"email": "test@example.com",
+	"password": "password"
+}
