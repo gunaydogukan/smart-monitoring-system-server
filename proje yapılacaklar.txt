@@ -1,0 +1,4 @@
+SENSOR data table dinamik olarak oluşturulacak
+front işlemleri yapılacak ve server tarafında düzenlemeler yapılacak
+sensor map gösterimi ve markerı değişecek
+güzel bir front tasarımı ile uğraşılacak
