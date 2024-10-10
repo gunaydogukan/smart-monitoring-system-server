@@ -2,7 +2,13 @@ const Type = require("../models/sensors/SensorTypes");
 const Sensors = require('../models/sensors/Sensors'); // Sensors modelini içe aktar
 
 const addSensors = async (req, res) => {
+
     try {
+
+        if(req.user.role==="personal" || !req.user){
+            return res.status(400).json({ message: 'Bu işlemi yapmaya yetkiniz yoktur. Lütfen yetkili birisine ulaşınız' });
+        } //sensör eklemeyi sadece admin ve manager yapabilir
+
         const { datacode, name, lat, lng, def, type, company_code, creator_id, village_id } = req.body;
 
         // Gerekli alanların doğrulanması
@@ -15,7 +21,6 @@ const addSensors = async (req, res) => {
             return res.status(400).json({ error: "Bu sensör zaten kayıtlı." });
         }
 
-        // Yeni sensör kaydının oluşturulması
         const newSensor = await Sensors.create({
             datacode,
             name,
@@ -28,7 +33,6 @@ const addSensors = async (req, res) => {
             village_id
         });
 
-        // Başarılı yanıt
         res.status(201).json({
             message: 'Sensör başarıyla eklendi.',
             sensor: newSensor
@@ -42,6 +46,11 @@ const addSensors = async (req, res) => {
 const addTypes = async (req,res) =>{
 
     try{
+
+        if( (req.user.role==="personal" || req.user.role==="manager") || !req.user){
+            return res.status(400).json({ message: 'Bu işlemi yapmaya yetkiniz yoktur. Lütfen yetkili birisine ulaşınız' });
+        } //type eklemeyi sadece admin
+
         const {type} = req.body;
 
         const existingType = await Type.findOne({ where: { type } });
