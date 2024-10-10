@@ -1,9 +1,9 @@
-const User = require("../models/User");
-const Company = require("../models/Companies");
-const Cities = require("../models/Cities");
-const Districts = require("../models/Districts");
-const Neighborhoods = require("../models/Neighborhoods");
-const Villages = require("../models/Villages");
+const User = require("../models/users/User");
+const Company = require("../models/users/Companies");
+const Cities = require("../models/users/Cities");
+const Districts = require("../models/users/Districts");
+const Neighborhoods = require("../models/users/Neighborhoods");
+const Villages = require("..//models/users/Villages");
 
 
 const jwt = require("jsonwebtoken");
