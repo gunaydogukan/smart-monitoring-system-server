@@ -59,27 +59,6 @@ const login = async (req, res) => {
     }
 };
 
-const companiesAdd = async (req, res) => {
-    try {
-        const { code, name, city_id } = req.body;
-        const existingCompany = await Company.findOne({ where: { code } });
-        if (existingCompany) {
-            return res.status(400).json({ error: "Bu kurum zaten kayıtlı." });
-        }
-        // deneme
-        const newCompany = await Company.create({
-            code,
-            name,
-            city_id,
-            creator_id: 1,
-        });
-
-        res.status(201).json(newCompany);
-    } catch (error) {
-        console.log("Kayıt hatası:", error);
-        res.status(500).json({error: "Ekleme sırasında bir hata oluştu. "});
-    }
-}
 
 const addAddress = async (req, res) => {
 
@@ -128,9 +107,30 @@ const addAddress = async (req, res) => {
         res.status(500).json({ error: "Adres ekleme sırasında bir hata oluştu." });
     }
 };
+const addCompanies = async (req, res) => {
+    try {
+        const { code, name, city_id } = req.body;
+        const existingCompany = await Company.findOne({ where: { code } });
+        if (existingCompany) {
+            return res.status(400).json({ error: "Bu kurum zaten kayıtlı." });
+        }
+        // deneme
+        const newCompany = await Company.create({
+            code,
+            name,
+            city_id,
+            creator_id: 1,
+        });
+
+        res.status(201).json(newCompany);
+    } catch (error) {
+        console.log("Kayıt hatası:", error);
+        res.status(500).json({error: "Ekleme sırasında bir hata oluştu. "});
+    }
+}
+
+module.exports = { register, login, addAddress ,addCompanies };
 
 
-
-module.exports = { register, login, addAddress ,companiesAdd };
 
 
