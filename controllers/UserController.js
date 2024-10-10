@@ -57,7 +57,7 @@ const login = async (req, res) => {
     }
 };
 
-const addCities = async (req, res, next) => {
+const addCities = async (req, res) => {
     try {
         const { plate, city } = req.body;
 
