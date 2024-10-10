@@ -163,8 +163,6 @@ const addManager = async (req, res) => {
     }
 };
 
-module.exports = { addManager };
-
 module.exports = { register, login, addAddress ,addCompanies , addManager};
 
 
