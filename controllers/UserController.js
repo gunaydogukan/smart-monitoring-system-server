@@ -134,8 +134,38 @@ const addCompanies = async (req, res) => {
         res.status(500).json({error: "Ekleme sırasında bir hata oluştu. "});
     }
 }
+const addManager = async (req, res) => {
+    try {
+        const { name, lastname, email, password, phone, companyCode, creator_id } = req.body;
 
-module.exports = { register, login, addAddress ,addCompanies };
+        // Eğer aynı email ile kayıtlı bir kullanıcı varsa hata döner
+        const existingUser = await User.findOne({ where: { email } });
+        if (existingUser) {
+            return res.status(400).json({ error: "Bu email adresi zaten kayıtlı." });
+        }
+
+        // Yeni bir manager oluştur
+        const newManager = await User.create({
+            name,
+            lastname,
+            email,
+            password,
+            phone,
+            role: "manager",
+            creator_id,
+            companyCode,
+        });
+
+        res.status(201).json(newManager);
+    } catch (err) {
+        console.error("Manager ekleme hatası:", err);
+        res.status(500).json({ error: "Manager ekleme sırasında bir hata oluştu." });
+    }
+};
+
+module.exports = { addManager };
+
+module.exports = { register, login, addAddress ,addCompanies , addManager};
 
 
 
