@@ -1,8 +1,8 @@
 const User = require("../models/User");
 const Cities = require("../models/Cities");
-const Districts = require("../models/Districts");
-const Neighborhoods = require("../models/Neighborhoods");
-const Villages = require("../models/Villages");
+//const Districts = require("../models/Districts");
+//const Neighborhoods = require("../models/Neighborhoods");
+//const Villages = require("../models/Villages");
 
 const jwt = require("jsonwebtoken");
 require('dotenv').config();
