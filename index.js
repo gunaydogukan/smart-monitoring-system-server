@@ -12,15 +12,16 @@ app.use(express.json());
 app.use('/api', userRoutes);
 
 
-sequelize.sync({ force: false })
+sequelize.sync({ alter: false, force: false })
     .then(() => {
-        console.log("Veritabanı ve tablolar başarıyla senkronize edildi.");
+        console.log('Veritabanı ve tablolar başarıyla senkronize edildi.');
         app.listen(port, () => {
-            console.log(`Sunucu ${port} portunda çalışıyor.`);
-        });
+            console.log(`sunucu ${port} unda çalışıyor`)
+        })
     })
     .catch((error) => {
-        console.error("Veritabanı senkronizasyon hatası:", error);
+        console.error('Veritabanı senkronizasyon hatası:', error);
     });
+
 
 

@@ -20,8 +20,5 @@ const cities = sequelize.define("cities",{
     }
 
 } ,{ timestamps: true });
-=======
-},{ timestamps: true });
-
 
 module.exports = cities;

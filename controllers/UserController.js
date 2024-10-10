@@ -80,7 +80,7 @@ const companiesAdd = async (req, res) => {
         res.status(500).json({error: "Ekleme sırasında bir hata oluştu. "});
     }
 }
-module.exports = { register, login ,companiesAdd};
+
 
 const addCities = async (req, res) => {
     try {
@@ -105,5 +105,5 @@ const addCities = async (req, res) => {
     }
 };
 
-module.exports = { register, login, addCities };
+module.exports = { register, login, addCities , companiesAdd};
 
