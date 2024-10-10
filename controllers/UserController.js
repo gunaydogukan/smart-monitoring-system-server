@@ -1,5 +1,11 @@
 const User = require("../models/User");
+
 const Company = require("../models/Companies");
+
+const Cities = require("../models/Cities");
+
+
+
 const jwt = require("jsonwebtoken");
 require('dotenv').config();
 
@@ -53,6 +59,7 @@ const login = async (req, res) => {
     }
 };
 
+
 const companiesAdd = async (req, res) => {
     try {
         const { code, name, city_id } = req.body;
@@ -74,3 +81,29 @@ const companiesAdd = async (req, res) => {
     }
 }
 module.exports = { register, login ,companiesAdd};
+
+const addCities = async (req, res) => {
+    try {
+        const { plate, city } = req.body;
+
+        // Şehir zaten var mı kontrol et
+        const existingCity = await Cities.findOne({ where: { plate } });
+        if (existingCity) {
+            return res.status(400).json({ error: "Bu şehir zaten kayıtlı." });
+        }
+
+        // Yeni şehir oluştur
+        const newCity = await Cities.create({
+            plate,
+            city,
+        });
+
+        res.status(201).json(newCity);
+    } catch (error) {
+        console.error("Şehir ekleme hatası:", error);
+        res.status(500).json({ error: "Şehir ekleme sırasında bir hata oluştu." });
+    }
+};
+
+module.exports = { register, login, addCities };
+
