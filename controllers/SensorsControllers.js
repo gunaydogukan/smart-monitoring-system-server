@@ -1,5 +1,5 @@
-const Type = require("../models/SensorTypes");
-const Sensors = require('../models/Sensors'); // Sensors modelini içe aktar
+const Type = require("../models/sensors/SensorTypes");
+const Sensors = require('../models/sensors/Sensors'); // Sensors modelini içe aktar
 
 const addSensors = async (req, res) => {
     try {
