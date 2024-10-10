@@ -3,7 +3,9 @@ const User = require("../models/User");
 const Company = require("../models/Companies");
 
 const Cities = require("../models/Cities");
-
+const Districts = require("../models/Districts");
+const Neighborhoods = require("../models/Neighborhoods");
+const Villages = require("../models/Villages");
 
 
 const jwt = require("jsonwebtoken");
@@ -59,7 +61,6 @@ const login = async (req, res) => {
     }
 };
 
-
 const companiesAdd = async (req, res) => {
     try {
         const { code, name, city_id } = req.body;
@@ -81,29 +82,54 @@ const companiesAdd = async (req, res) => {
     }
 }
 
+const addAddress = async (req, res) => {
 
-const addCities = async (req, res) => {
     try {
-        const { plate, city } = req.body;
+        const { plate, city, districts } = req.body;
 
-        // Şehir zaten var mı kontrol et
-        const existingCity = await Cities.findOne({ where: { plate } });
-        if (existingCity) {
-            return res.status(400).json({ error: "Bu şehir zaten kayıtlı." });
-        }
-
-        // Yeni şehir oluştur
+        // Şehir ekle
         const newCity = await Cities.create({
             plate,
             city,
         });
 
-        res.status(201).json(newCity);
+        // İlçe, mahalle ve köyleri ekle
+        for (const districtData of districts) {
+            const { district, neighborhoods } = districtData;
+
+            // İlçe ekle
+            const newDistrict = await Districts.create({
+                city_id: newCity.plate,
+                district,
+            });
+
+            // Mahalle ve köyleri ekle
+            for (const neighborhoodData of neighborhoods) {
+                const { neighborhood, villages } = neighborhoodData;
+
+                // Mahalle ekle
+                const newNeighborhood = await Neighborhoods.create({
+                    district_id: newDistrict.id,
+                    neighborhood,
+                });
+
+                // Köyleri ekle
+                for (const village of villages) {
+                    await Villages.create({
+                        neighborhood_id: newNeighborhood.id,
+                        village,
+                    });
+                }
+            }
+        }
+
+        res.status(201).json({ message: "Adres başarıyla eklendi." });
     } catch (error) {
-        console.error("Şehir ekleme hatası:", error);
-        res.status(500).json({ error: "Şehir ekleme sırasında bir hata oluştu." });
+        console.error("Adres ekleme hatası:", error);
+        res.status(500).json({ error: "Adres ekleme sırasında bir hata oluştu." });
     }
 };
 
-module.exports = { register, login, addCities , companiesAdd};
+
+module.exports = { register, login, addAddress };
 

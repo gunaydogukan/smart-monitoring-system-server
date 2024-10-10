@@ -4,7 +4,7 @@ const userController = require("../controllers/UserController");
 
 router.post('/register', userController.register);
 router.post('/login', userController.login);
-router.post('/cities',userController.addCities);
+router.post('/address',userController.addAddress);
 router.post('/companies', userController.companiesAdd);
 
 
