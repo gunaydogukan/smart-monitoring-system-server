@@ -4,8 +4,8 @@ const Sensors = require('../models/sensors/Sensors'); // Sensors modelini içe a
 const addSensors = async (req, res) => {
 
     try {
-
-        if(req.user.role==="personal" || !req.user){
+        const user = req.user;
+        if(user.role==="personal" || !user){
             return res.status(400).json({ message: 'Bu işlemi yapmaya yetkiniz yoktur. Lütfen yetkili birisine ulaşınız' });
         } //sensör eklemeyi sadece admin ve manager yapabilir
 
@@ -30,7 +30,7 @@ const addSensors = async (req, res) => {
             type,
             company_code,
             creator_id,
-            village_id
+            village_id,
         });
 
         res.status(201).json({
@@ -46,8 +46,8 @@ const addSensors = async (req, res) => {
 const addTypes = async (req,res) =>{
 
     try{
-
-        if( (req.user.role==="personal" || req.user.role==="manager") || !req.user){
+        const user = req.user;
+        if( (user.role==="personal" || user.role==="manager") || !user){
             return res.status(400).json({ message: 'Bu işlemi yapmaya yetkiniz yoktur. Lütfen yetkili birisine ulaşınız' });
         } //type eklemeyi sadece admin
 
