@@ -1,4 +1,43 @@
-const Type = require("../models/Sensor_Type");
+const Type = require("../models/SensorTypes");
+const Sensors = require('../models/Sensors'); // Sensors modelini içe aktar
+
+const addSensors = async (req, res) => {
+    try {
+        const { datacode, name, lat, lng, def, type, company_code, creator_id, village_id } = req.body;
+
+        // Gerekli alanların doğrulanması
+        if (!datacode || !name || !lat || !lng || !type || !company_code || !creator_id || !village_id) {
+            return res.status(400).json({ message: 'Lütfen tüm gerekli alanları doldurun.' });
+        }
+
+        const existingSensor = await Sensors.findOne({ where: { datacode } });
+        if (existingSensor) {
+            return res.status(400).json({ error: "Bu sensör zaten kayıtlı." });
+        }
+
+        // Yeni sensör kaydının oluşturulması
+        const newSensor = await Sensors.create({
+            datacode,
+            name,
+            lat,
+            lng,
+            def,
+            type,
+            company_code,
+            creator_id,
+            village_id
+        });
+
+        // Başarılı yanıt
+        res.status(201).json({
+            message: 'Sensör başarıyla eklendi.',
+            sensor: newSensor
+        });
+    } catch (error) {
+        console.error('Sensör eklenirken hata:', error);
+        res.status(500).json({ message: 'Bir hata oluştu. Lütfen tekrar deneyin.' });
+    }
+};
 
 const addTypes = async (req,res) =>{
 
@@ -22,4 +61,4 @@ const addTypes = async (req,res) =>{
     }
 };
 
-module.exports = {addTypes};
+module.exports = {addTypes,addSensors};
