@@ -56,6 +56,11 @@ const User = sequelize.define('users', {
         allowNull: false,
         unique: true,
     },
+    isActive: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: true // Varsayılan olarak kayıtlar aktif gelir
+    }
 
 },{ timestamps: true });
 

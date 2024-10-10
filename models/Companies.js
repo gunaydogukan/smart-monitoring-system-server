@@ -38,6 +38,11 @@ const Companies = sequelize.define("Companies", {
     name: {
         type: Sequelize.STRING,
         allowNull: false,
+    },
+    isActive: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: true // Varsayılan olarak kayıtlar aktif gelir
     }
 
 }, {
