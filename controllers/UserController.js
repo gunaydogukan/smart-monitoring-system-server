@@ -1,7 +1,5 @@
 const User = require("../models/User");
-
 const Company = require("../models/Companies");
-
 const Cities = require("../models/Cities");
 const Districts = require("../models/Districts");
 const Neighborhoods = require("../models/Neighborhoods");
@@ -68,6 +66,7 @@ const companiesAdd = async (req, res) => {
         if (existingCompany) {
             return res.status(400).json({ error: "Bu kurum zaten kayıtlı." });
         }
+        // deneme
         const newCompany = await Company.create({
             code,
             name,
@@ -131,5 +130,7 @@ const addAddress = async (req, res) => {
 };
 
 
-module.exports = { register, login, addAddress,companiesAdd };
+
+module.exports = { register, login, addAddress ,companiesAdd };
+
 

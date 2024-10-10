@@ -10,7 +10,7 @@ const Companies = sequelize.define("Companies", {
         allowNull: false,
         autoIncrement: true,
     },
-    creator_id:{
+    creator_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
@@ -20,7 +20,7 @@ const Companies = sequelize.define("Companies", {
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     },
-    city_id:{
+    city_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
@@ -30,15 +30,20 @@ const Companies = sequelize.define("Companies", {
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     },
-    code:{
+    code: {
         type: Sequelize.STRING,
         allowNull: false,
+        unique: true,
     },
     name: {
         type: Sequelize.STRING,
         allowNull: false,
     }
 
-}, { timestamps: true });
+}, {
+    timestamps: true,
+
+});
+
 
 module.exports = Companies;
