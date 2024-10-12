@@ -11,6 +11,7 @@ const port = 5000;
 app.use(cors());
 
 app.use(express.json());
+console.log("back index")
 app.use('/api', userRoutes);
 app.use('/api', sensorRoutes);
 

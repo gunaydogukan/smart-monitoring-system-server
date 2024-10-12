@@ -52,10 +52,14 @@ const login = async (req, res) => {
 
         const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: "2h" });
 
-        res.status(200).json({ token });
+        res.status(200).json({
+            success: true,
+            user: user,
+            token: token
+        });
     } catch (error) {
         console.error("Giriş hatası:", error);
-        res.status(500).json({ error: "Giriş sırasında bir hata oluştu." });
+        res.status(500).json({ error: "Giriş sırasında bir hata oluştu." });
     }
 };
 
@@ -65,51 +69,77 @@ const addAddress = async (req, res) => {
         // Kullanıcı bilgilerini doğrula (örneğin, JWT token üzerinden)
         const user = req.user; // req.user, doğrulanmış kullanıcıyı temsil eder (middleware tarafından ayarlanır)
 
+        console.log(user);
+        console.log("backdeyim")
+
         // Eğer kullanıcı yoksa veya rolü "administrator" ya da "manager" değilse hata döner
         if (!user || (user.role !== 'administrator' && user.role !== 'manager')) {
             return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
         }
 
         const { plate, city, districts } = req.body;
+        console.log("Gelen Veri=", req.body);
+        console.log("deneme");
 
-        // Aynı plaka ile kayıtlı bir şehir varsa hata döner
-        const existingCity = await Cities.findOne({ where: { plate } });
-        if (existingCity) {
-            return res.status(400).json({ error: "Bu şehir zaten kayıtlı." });
+        // aynı şehirden varsa verileri al devam et
+        let newCity = await Cities.findOne({ where: { plate } });
+        if (!newCity) {
+            newCity = await Cities.create({ plate, city });
+        } else {
+            newCity = { plate: newCity.plate, city: newCity.city };
         }
 
-        // Şehir ekle
-        const newCity = await Cities.create({
-            plate,
-            city,
-        });
 
         // İlçe, mahalle ve köyleri ekle
         for (const districtData of districts) {
             const { district, neighborhoods } = districtData;
 
-            // İlçe ekle
-            const newDistrict = await Districts.create({
-                city_id: newCity.plate,
-                district,
+            // aynı ilçe kontrolü
+            let newDistrict = await Districts.findOne({
+                where: { district, city_id: newCity.plate }
             });
 
-            // Mahalle ve köyleri ekle
+            if (!newDistrict) {
+                newDistrict = await Districts.create({
+                    city_id: newCity.plate,
+                    district,
+                });
+            } else {
+                newDistrict = { id: newDistrict.id, district: newDistrict.district };
+            }
+
             for (const neighborhoodData of neighborhoods) {
                 const { neighborhood, villages } = neighborhoodData;
 
-                // Mahalle ekle
-                const newNeighborhood = await Neighborhoods.create({
-                    district_id: newDistrict.id,
-                    neighborhood,
+                // Mahalle kontrolü
+                let newNeighborhood = await Neighborhoods.findOne({
+                    where: { neighborhood, district_id: newDistrict.id }
                 });
 
-                // Köyleri ekle
-                for (const village of villages) {
-                    await Villages.create({
-                        neighborhood_id: newNeighborhood.id,
-                        village,
+                if (!newNeighborhood) {
+                    newNeighborhood = await Neighborhoods.create({
+                        district_id: newDistrict.id,
+                        neighborhood,
                     });
+                } else {
+                    newNeighborhood = {
+                        id: newNeighborhood.id,
+                        neighborhood: newNeighborhood.neighborhood,
+                    };
+                }
+
+                for (const village of villages) {
+
+                    let newVillage = await Villages.findOne({
+                        where: { village, neighborhood_id: newNeighborhood.id }
+                    });
+
+                    if (!newVillage) {
+                        await Villages.create({
+                            neighborhood_id: newNeighborhood.id,
+                            village,
+                        });
+                    }
                 }
             }
         }
