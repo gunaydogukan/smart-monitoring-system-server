@@ -1,6 +1,5 @@
 const Sequelize = require("sequelize");
 const sequelize = require("../../config/database");
-const Companies = require('../users/companies');
 
 const User = sequelize.define('users', {
     id: {
@@ -14,25 +13,8 @@ const User = sequelize.define('users', {
         allowNull: false,
     },
     creator_id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.INTEGER,  // Sadece integer olarak tanımlıyoruz
         allowNull: true,
-        references: {
-            model: "users",
-            key: "id",
-        },
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    },
-    companyCode: {
-        type: Sequelize.STRING,
-        allowNull: true,
-        references: {
-            model: Companies,
-            key: "code",
-        },
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-
     },
     name: {
         type: Sequelize.STRING,
@@ -59,9 +41,8 @@ const User = sequelize.define('users', {
     isActive: {
         type: Sequelize.BOOLEAN,
         allowNull: false,
-        defaultValue: true // Varsayılan olarak kayıtlar aktif gelir
-    }
-
-},{ timestamps: true });
+        defaultValue: true,
+    },
+}, { timestamps: true });
 
 module.exports = User;
