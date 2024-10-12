@@ -8,12 +8,17 @@ const authenticateToken = (req, res, next) => {
     const token = authHeader && authHeader.split(' ')[1]; // Bearer token formatı
 
     if (!token) {
+        console.log("Token eksik.");
         return res.status(401).json({ error: 'Yetkisiz erişim. Token eksik.' });
     }
 
     jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) return res.status(403).json({ error: 'Geçersiz token.' });
+        if (err) {
+            console.log("Token doğrulama hatası:", err.message);
+            return res.status(403).json({ error: 'Geçersiz token.' });
+        }
 
+        console.log("Doğrulanan kullanıcı:", user); // Kullanıcı bilgilerini loglayın
         req.user = user; // Kullanıcı bilgilerini request'e ekliyoruz
         next();
     });
