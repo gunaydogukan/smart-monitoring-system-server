@@ -5,17 +5,18 @@ const Districts = require("../models/users/Districts");
 const Neighborhoods = require("../models/users/Neighborhoods");
 const Villages = require("..//models/users/Villages");
 const bcrypt = require("bcrypt");
+const City = require('../models/users/Cities'); // Şehir modelini ekleyin
 
 
 const jwt = require("jsonwebtoken");
 require('dotenv').config();
 const JWT_SECRET = process.env.JWT_SECRET;
-
-const validRoles = ['manager', 'personal']; // İzin verilen roller
+const validRoles = ['manager', 'personal'];
+ // İzin verilen roller
 
 const register = async (req, res) => {
     try {
-        const { name, lastname, email, password, phone, role } = req.body;
+        const { name, lastname, email, password, phone, role, companyCode } = req.body;
 
         // Token'dan creator bilgilerini alıyoruz
         const authHeader = req.headers.authorization;
@@ -42,6 +43,7 @@ const register = async (req, res) => {
             phone,
             role,
             creator_id, // Oturum açan kullanıcının ID'si
+            companyCode, // Şirket kodunu ekliyoruz
         });
 
         console.log("Eklenen kullanıcı:", newUser);
@@ -52,45 +54,40 @@ const register = async (req, res) => {
         res.status(500).json({ error: 'Kayıt sırasında bir hata oluştu.' });
     }
 };
-
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // Email ve şifre kontrolü
-        if (!email || !password) {
-            return res.status(400).json({ error: "Email ve Parola Gereklidir" });
-        }
-
-        // Kullanıcıyı veritabanında bul
+        // Kullanıcıyı email ile bul
         const user = await User.findOne({ where: { email } });
         if (!user) {
-            return res.status(400).json({ error: "Email veya Parola Hatalı" });
+            return res.status(400).json({ error: "Email veya şifre hatalı." });
         }
 
         // Şifreyi karşılaştır
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
-            return res.status(400).json({ error: "Email veya Parola Hatalı" });
+            return res.status(400).json({ error: "Email veya şifre hatalı." });
         }
 
-        // JWT token oluştur
+        // Token oluştur
         const token = jwt.sign(
-            { id: user.id, role: user.role },
-            process.env.JWT_SECRET,
-            { expiresIn: '2h' }
+            { id: user.id, role: user.role }, // Payload
+            JWT_SECRET, // Secret key
+            { expiresIn: "2h" } // Token süresi
         );
 
-        console.log("Token:", token);
-
-        // Şifreyi yanıt dışında bırakarak kullanıcı bilgilerini döndür
-        const { password: _, ...userWithoutPassword } = user.dataValues;
-
+        // Yanıt döndür
         res.status(200).json({
             success: true,
-            user: userWithoutPassword,
             token: token,
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+            },
         });
+
     } catch (error) {
         console.error("Giriş hatası:", error);
         res.status(500).json({ error: "Giriş sırasında bir hata oluştu." });
@@ -194,33 +191,32 @@ const addAddress = async (req, res) => {
 };
 const addCompanies = async (req, res) => {
     try {
-        // Kullanıcı bilgilerini doğrula (örneğin, JWT token üzerinden)
-        const user = req.user; // req.user, doğrulanmış kullanıcıyı temsil eder (middleware tarafından ayarlanır)
+        const user = req.user; // Auth middleware'den gelen kullanıcı bilgisi
 
-        // Eğer kullanıcı yoksa veya rolü "administrator" değilse hata döner
+        // Sadece administrator ekleyebilecek
         if (!user || user.role !== 'administrator') {
             return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
         }
 
         const { code, name, city_id } = req.body;
 
-        // Eğer aynı code ile kayıtlı bir şirket varsa hata döner
+        // Aynı kodla bir şirket olup olmadığını kontrol et
         const existingCompany = await Company.findOne({ where: { code } });
         if (existingCompany) {
             return res.status(400).json({ error: "Bu kurum zaten kayıtlı." });
         }
 
-        // Yeni bir şirket oluştur
+        // Yeni bir kurum oluştur
         const newCompany = await Company.create({
             code,
             name,
             city_id,
-            creator_id: user.id, // Kullanıcı ID'si creator olarak atanıyor
+            creator_id: user.id, // Şirketi ekleyen kullanıcının ID'si
         });
 
         res.status(201).json(newCompany);
     } catch (error) {
-        console.log("Kayıt hatası:", error);
+        console.error("Kayıt hatası:", error);
         res.status(500).json({ error: "Ekleme sırasında bir hata oluştu." });
     }
 };
@@ -298,7 +294,50 @@ const addPersonal = async (req, res) => {
     }
 };
 
-module.exports = { register, login, addAddress ,addCompanies , addManager ,addPersonal};
+// Tüm şirketleri listeleme
+const getCompanies = async (req, res) => {
+    try {
+        const companies = await Company.findAll();
+        res.status(200).json(companies);
+    } catch (error) {
+        console.error('Şirketleri getirirken hata:', error);
+        res.status(500).json({ error: 'Şirketler getirilemedi.' });
+    }
+};
+
+// Tüm şehirleri listeleme
+const getCities = async (req, res) => {
+    try {
+        const cities = await Cities.findAll();
+        res.status(200).json(cities);
+    } catch (error) {
+        console.error('Şehirleri çekerken hata:', error);
+        res.status(500).json({ error: 'Şehirleri yüklerken hata oluştu.' });
+    }
+};
+
+const getProfile = async (req, res) => {
+    try {
+        const user = await User.findOne({
+            where: { id: req.user.id },
+            include: {
+                model: Company, // Şirket bilgisiyle ilişkilendir
+                as: 'company',
+            },
+            attributes: ['id', 'name', 'lastname', 'email', 'phone', 'password', 'role', 'companyCode'], // Şifreyi de alıyoruz
+        });
+
+        if (!user) {
+            return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
+        }
+
+        res.status(200).json(user);
+    } catch (error) {
+        console.error('Profil bilgisi hatası:', error);
+        res.status(500).json({ error: 'Profil bilgisi alınamadı.' });
+    }
+};
+module.exports = { register, login, addAddress ,addCompanies , addManager ,addPersonal,getCompanies,getCities, getProfile};
 
 
 

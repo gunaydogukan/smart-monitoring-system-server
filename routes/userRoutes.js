@@ -25,5 +25,11 @@ router.post('/personal', authenticateToken, authorizeRole(['manager', 'administr
 router.get("/verifyToken", authenticateToken, (req, res) => {
     res.json({ valid: true, user: req.user }); // Geçerli token ile kullanıcı bilgisi döner
 });
+router.get('/cities', authenticateToken, userController.getCities); // Şehirleri listeleme
+
+router.post('/companies', authenticateToken, authorizeRole(['administrator']), userController.addCompanies);
+router.get('/profile', authenticateToken, userController.getProfile);
+
+router.get('/companies', authenticateToken, userController.getCompanies);
 
 module.exports = router;
