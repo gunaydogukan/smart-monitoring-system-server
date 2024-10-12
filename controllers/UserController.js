@@ -89,7 +89,7 @@ const addAddress = async (req, res) => {
             newCity = { plate: newCity.plate, city: newCity.city };
         }
 
-
+        let newVillage;
         // İlçe, mahalle ve köyleri ekle
         for (const districtData of districts) {
             const { district, neighborhoods } = districtData;
@@ -128,14 +128,14 @@ const addAddress = async (req, res) => {
                     };
                 }
 
-                for (const village of villages) {
 
-                    let newVillage = await Villages.findOne({
+                for (const village of villages) {
+                    newVillage = await Villages.findOne({
                         where: { village, neighborhood_id: newNeighborhood.id }
                     });
 
                     if (!newVillage) {
-                        await Villages.create({
+                        newVillage = await Villages.create({
                             neighborhood_id: newNeighborhood.id,
                             village,
                         });
@@ -143,8 +143,19 @@ const addAddress = async (req, res) => {
                 }
             }
         }
+        // Köy bilgisi eklenmediyse uygun bir cevap döndür
+        if (!newVillage) {
+            return res.status(400).json({
+                message: "Köy eklenemedi veya bulunamadı."
+            });
+        }
+        // En son eklenen köyün ID ve ismini döndür
+        res.status(201).json({
+            message: "Adres başarıyla eklendi.",
+            villageId: newVillage?.id, // Optional chaining
+            villageName: newVillage?.village, // Köy ismini döndür
+        });
 
-        res.status(201).json({ message: "Adres başarıyla eklendi." });
     } catch (error) {
         console.error("Adres ekleme hatası:", error);
         res.status(500).json({ error: "Adres ekleme sırasında bir hata oluştu." });
@@ -183,6 +194,7 @@ const addCompanies = async (req, res) => {
         res.status(500).json({ error: "Ekleme sırasında bir hata oluştu." });
     }
 };
+
 const addManager = async (req, res) => {
     try {
         // Kullanıcı bilgilerini doğrula (örneğin, JWT token üzerinden)
