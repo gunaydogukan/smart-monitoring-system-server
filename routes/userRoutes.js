@@ -1,14 +1,29 @@
 const express = require('express');
 const router = express.Router();
 const userController = require("../controllers/UserController");
-const authenticateToken = require('../middleware/BearerTokenMiddleware'); // Middleware
+const { authenticateToken, authorizeRole } = require("../middleware/BearerTokenMiddleware");
 
-router.post('/register',authenticateToken, userController.register);
+// Register endpoint: Sadece administrator rolüne sahip kullanıcılar ekleyebilir
+router.post('/register', authenticateToken, authorizeRole(['administrator']), userController.register);
+
+// Login işlemi için token gerekmez
 router.post('/login', userController.login);
-router.post('/address',authenticateToken,userController.addAddress);
-router.post('/companies',authenticateToken, userController.addCompanies);
-router.post('/manager',authenticateToken, userController.addManager);
-router.post('/personal',authenticateToken, userController.addPersonal);
 
+// Address ekleme: Tüm yetkili kullanıcılar
+router.post('/address', authenticateToken, userController.addAddress);
+
+// Companies ekleme: Tüm yetkili kullanıcılar
+router.post('/companies', authenticateToken, userController.addCompanies);
+
+// Manager ekleme: Sadece administrator yetkisi
+router.post('/manager', authenticateToken, authorizeRole(['administrator']), userController.addManager);
+
+// Personal ekleme: Sadece manager veya administrator yetkisi
+router.post('/personal', authenticateToken, authorizeRole(['manager', 'administrator']), userController.addPersonal);
+
+// Token doğrulama endpoint'i
+router.get("/verifyToken", authenticateToken, (req, res) => {
+    res.json({ valid: true, user: req.user }); // Geçerli token ile kullanıcı bilgisi döner
+});
 
 module.exports = router;
