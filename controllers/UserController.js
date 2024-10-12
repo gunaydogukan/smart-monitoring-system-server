@@ -4,36 +4,52 @@ const Cities = require("../models/users/Cities");
 const Districts = require("../models/users/Districts");
 const Neighborhoods = require("../models/users/Neighborhoods");
 const Villages = require("..//models/users/Villages");
+const bcrypt = require("bcrypt");
 
 
 const jwt = require("jsonwebtoken");
 require('dotenv').config();
-
 const JWT_SECRET = process.env.JWT_SECRET;
+
+const validRoles = ['manager', 'personal']; // İzin verilen roller
 
 const register = async (req, res) => {
     try {
-        const { name, lastname, email, password, phone, role, creator_id } = req.body;
+        const { name, lastname, email, password, phone, role } = req.body;
 
-        const existingUser = await User.findOne({ where: { email } });
-        if (existingUser) {
-            return res.status(400).json({ error: "Bu email adresi zaten kayıtlı." });
+        // Token'dan creator bilgilerini alıyoruz
+        const authHeader = req.headers.authorization;
+        const token = authHeader && authHeader.split(' ')[1];
+        if (!token) return res.status(401).json({ error: 'Yetkisiz erişim.' });
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const creator_id = decoded.id;
+
+        console.log("Giriş yapan kullanıcının rolü:", decoded.role);
+
+        // İzin verilmeyen roller eklenmesin (administrator eklenemez)
+        if (!validRoles.includes(role)) {
+            return res.status(403).json({ error: 'Bu rolü eklemeye yetkiniz yok.' });
         }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
 
         const newUser = await User.create({
             name,
             lastname,
             email,
-            password,
+            password: hashedPassword,
             phone,
             role,
-            creatorId: role === "administrator" ? null : creator_id,
+            creator_id, // Oturum açan kullanıcının ID'si
         });
 
-        res.status(201).json(newUser);
+        console.log("Eklenen kullanıcı:", newUser);
+
+        res.status(201).json({ success: true, user: newUser });
     } catch (error) {
-        console.error("Kullanıcı kaydı hatası:", error);
-        res.status(500).json({ error: "Kullanıcı kaydı sırasında bir hata oluştu." });
+        console.error("Kayıt hatası:", error);
+        res.status(500).json({ error: 'Kayıt sırasında bir hata oluştu.' });
     }
 };
 
@@ -41,18 +57,40 @@ const login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
+        // Email ve şifre kontrolü
+        if (!email || !password) {
+            return res.status(400).json({ error: "Email ve Parola Gereklidir" });
+        }
+
+        // Kullanıcıyı veritabanında bul
         const user = await User.findOne({ where: { email } });
         if (!user) {
             return res.status(400).json({ error: "Email veya Parola Hatalı" });
         }
 
-        if (user.password !== password) {
+        // Şifreyi karşılaştır
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
             return res.status(400).json({ error: "Email veya Parola Hatalı" });
         }
 
-        const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: "2h" });
+        // JWT token oluştur
+        const token = jwt.sign(
+            { id: user.id, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: '2h' }
+        );
 
-        res.status(200).json({ token });
+        console.log("Token:", token);
+
+        // Şifreyi yanıt dışında bırakarak kullanıcı bilgilerini döndür
+        const { password: _, ...userWithoutPassword } = user.dataValues;
+
+        res.status(200).json({
+            success: true,
+            user: userWithoutPassword,
+            token: token,
+        });
     } catch (error) {
         console.error("Giriş hatası:", error);
         res.status(500).json({ error: "Giriş sırasında bir hata oluştu." });
