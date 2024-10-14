@@ -42,13 +42,15 @@ const addSensors = async (req, res) => {
         });
 
         const sensorId = newSensor.id
+        console.log(newSensor.id);
+        console.log(manager_id);
+        const ownerResponse = await addOwner(manager_id, sensorId);
 
-        const ownerResponse =addOwner(manager_id,sensorId); //owner table'ına manager ve sensör gönderildi
-
+        // Başarılı yanıt döndürme
         res.status(201).json({
             message: 'Sensör başarıyla eklendi.',
             sensor: newSensor,
-            owner:ownerResponse,
+            owner: ownerResponse,
         });
 
     } catch (error) {
@@ -57,19 +59,24 @@ const addSensors = async (req, res) => {
     }
 };
 
-const addOwner =async (managerId, sensorId) => {
-    // Fonksiyon içinde yapılacak işlemler
-    console.log(`Manager ${managerId} ile Sensor ${sensorId} bağlanıyor.`);
+const addOwner = async (managerId, sensorId) => {
+    try {
 
-    const newOwner = await SensorOwner.create({
-        managerId,
-        sensorId
-    });
+        console.log(`Manager ${managerId} ile Sensor ${sensorId} bağlanıyor.`);
 
-    return "owner başarıyla eklendi";
+        // SensorOwner kaydı oluşturma
+        const newOwner = await SensorOwner.create({
+            sensor_owner:parseInt(managerId),
+            sensor_id:parseInt(sensorId),
+        });
 
-    // Burada gerekli işlemleri yapabilirsiniz
-    // Örneğin, backend'e bir POST isteği ile owner ekleme
+        console.log('Yeni owner kaydedildi:', newOwner);
+
+        return { success: true, message: 'Owner başarıyla eklendi', owner: newOwner };
+    } catch (error) {
+        console.error('Owner ekleme hatası:', error);
+        return { success: false, message: 'Owner ekleme sırasında bir hata oluştu.' };
+    }
 };
 
 const addTypes = async (req,res) =>{
