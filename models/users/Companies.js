@@ -1,9 +1,8 @@
-const Sequelize = require("sequelize");
-const sequelize = require("../../config/database");
-const Cities = require('../users/Cities');
-const User = require('../users/User');
+const Sequelize = require('sequelize');
+const sequelize = require('../../config/database'); // Veritabanı bağlantısı
 
-const Companies = sequelize.define("Companies", {
+
+const Companies = sequelize.define('companies', {
     id: {
         type: Sequelize.INTEGER,
         primaryKey: true,
@@ -14,21 +13,11 @@ const Companies = sequelize.define("Companies", {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-            model: "users",
-            key: "id",
+            model: 'users',
+            key: 'id',
         },
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    },
-    city_id: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        references: {
-            model: Cities,
-            key: "id",
-        },
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE',
     },
     code: {
         type: Sequelize.STRING,
@@ -42,13 +31,9 @@ const Companies = sequelize.define("Companies", {
     isActive: {
         type: Sequelize.BOOLEAN,
         allowNull: false,
-        defaultValue: true // Varsayılan olarak kayıtlar aktif gelir
-    }
-
-}, {
-    timestamps: true,
-
-});
+        defaultValue: true,
+    },
+}, { timestamps: true });
 
 
 module.exports = Companies;

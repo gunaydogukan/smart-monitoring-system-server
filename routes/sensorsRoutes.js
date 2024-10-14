@@ -11,6 +11,6 @@ router.post('/sensors', authenticateToken, sensorsController.addSensors);
 router.get('/type', authenticateToken, sensorsController.getTypes);
 
 // Kullanıcıya ait sensörleri getiren route
-router.get('/user-sensors', authenticateToken, sensorsController.getUserSensors);
+router.get('/sensors', authenticateToken, sensorsController.getUserSensors);
 
 module.exports = router;
