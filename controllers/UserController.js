@@ -5,7 +5,6 @@ const Districts = require("../models/users/Districts");
 const Neighborhoods = require("../models/users/Neighborhoods");
 const Villages = require("..//models/users/Villages");
 const bcrypt = require("bcrypt");
-const City = require('../models/users/Cities'); // Şehir modelini ekleyin
 
 
 const jwt = require("jsonwebtoken");
@@ -319,27 +318,48 @@ const getCities = async (req, res) => {
     }
 };
 
+
+
 const getProfile = async (req, res) => {
     try {
+        // Kullanıcıyı bulma
         const user = await User.findOne({
             where: { id: req.user.id },
-            include: {
-                model: Company, // Şirket bilgisiyle ilişkilendir
-                as: 'company',
-            },
-            attributes: ['id', 'name', 'lastname', 'email', 'phone', 'password', 'role', 'companyCode'], // Şifreyi de alıyoruz
+            attributes: ['id', 'companyCode', 'name', 'lastname', 'email', 'phone', 'role'], // Kullanıcı bilgileri
         });
 
         if (!user) {
             return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
         }
 
-        res.status(200).json(user);
+        // Kullanıcının companyCode'una göre şirketi bulma
+        const company = await Company.findOne({
+            where: { code: user.companyCode },
+            attributes: ['name', 'code'], // Şirket bilgileri
+        });
+
+        // Şirket bulunamazsa hata döndür
+        if (!company) {
+            return res.status(404).json({ error: 'Kullanıcının bağlı olduğu şirket bulunamadı.' });
+        }
+
+        // Kullanıcı ve şirket bilgilerini birleştirip dön
+        const response = {
+            ...user.toJSON(),
+            companyName: company.name,
+        };
+
+        res.status(200).json(response);
     } catch (error) {
         console.error('Profil bilgisi hatası:', error);
-        res.status(500).json({ error: 'Profil bilgisi alınamadı.' });
+        res.status(500).json({ error: 'Profil bilgisi alınamadı.', message: error.message });
     }
 };
+
+
+
+
+
 
 const getUsers = async (req, res) =>{
     //token'den gelen rol kontrolü

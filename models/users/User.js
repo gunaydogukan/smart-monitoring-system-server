@@ -1,6 +1,6 @@
-const Sequelize = require('sequelize');  // Sequelize kütüphanesini dahil ediyoruz
-const sequelize = require('../../config/database'); // Veritabanı bağlantısını içe aktarıyoruz
-const Companies = require('../users/Companies'); // Şirket modelini dahil ediyoruz
+const Sequelize = require('sequelize');
+const sequelize = require('../../config/database'); // Veritabanı bağlantısı
+//const Companies = require('../users/Companies'); // Şirket modelini içe aktarıyoruz
 
 const User = sequelize.define('users', {
     id: {
@@ -13,15 +13,11 @@ const User = sequelize.define('users', {
         type: Sequelize.ENUM('administrator', 'manager', 'personal'),
         allowNull: false,
     },
-    creator_id: {
-        type: Sequelize.INTEGER,
-        allowNull: true,
-    },
     companyCode: {
         type: Sequelize.STRING,
         allowNull: true,
         references: {
-            model: Companies, // Companies modeline referans
+            model: 'companies',
             key: 'code',
         },
         onDelete: 'SET NULL',
@@ -55,6 +51,5 @@ const User = sequelize.define('users', {
         defaultValue: true,
     },
 }, { timestamps: true });
-
 
 module.exports = User;
