@@ -1,7 +1,7 @@
 const Sequelize = require("sequelize");
 const sequelize = require("../../config/database");
 const Cities = require('../users/Cities');
-const User = require('../users/Cities');
+const User = require('../users/User');
 
 const Companies = sequelize.define("Companies", {
     id: {
@@ -14,7 +14,7 @@ const Companies = sequelize.define("Companies", {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-            model: User,
+            model: "users",
             key: "id",
         },
         onDelete: "CASCADE",

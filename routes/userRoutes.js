@@ -37,6 +37,6 @@ router.get('/profile', authenticateToken, userController.getProfile);
 router.get('/companies', authenticateToken, userController.getCompanies);
 
 //kullanıcı görüntüleme işlerini sadece manager ve admin yapabilir
-router.get('/users',authenticateToken,authorizeRole(['manager', 'administrator']),userController.getUsers);
+router.get('/users',authenticateToken,userController.getUsers);
 
 module.exports = router;

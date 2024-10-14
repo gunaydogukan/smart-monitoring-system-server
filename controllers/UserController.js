@@ -57,26 +57,29 @@ const register = async (req, res) => {
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
-
+        console.log("deneme");
         // Kullanıcıyı email ile bul
         const user = await User.findOne({ where: { email } });
+        console.log(user);
         if (!user) {
             return res.status(400).json({ error: "Email veya şifre hatalı." });
         }
-
+        console.log(user.password);
         // Şifreyi karşılaştır
         const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        console.log(password);
         if (!isPasswordValid) {
             return res.status(400).json({ error: "Email veya şifre hatalı." });
         }
-
+        console.log("deneme")
         // Token oluştur
         const token = jwt.sign(
             { id: user.id, role: user.role }, // Payload
             JWT_SECRET, // Secret key
             { expiresIn: "2h" } // Token süresi
         );
-
+        console.log(token);
         // Yanıt döndür
         res.status(200).json({
             success: true,
@@ -343,7 +346,7 @@ const getUsers = async (req, res) =>{
     const {role} = req.user;
     const adminId = req.user.id;
 
-    if (role !== 'administrator' || role !== 'manager') {
+    if (role !== 'administrator' && role !== 'manager') {
         return res.status(403).json({ message: 'Bu işlemi yapmak için yetkiniz yok.' });
     }
 

@@ -5,7 +5,7 @@ const SensorOwner = require('../models/sensors/sensorOwner');
 const addSensors = async (req, res) => {
     try {
         const user = req.user;
-
+        console.log(user.role);
         // Kullanıcı yetkisini kontrol et
         if (user.role === "personal" || !user) {
             return res.status(400).json({
