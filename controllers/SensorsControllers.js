@@ -109,16 +109,15 @@ const addTypes = async (req,res) =>{
 const getTypes = async (req, res) => {
     try {
         const types = await Type.findAll();
+        if (!Array.isArray(types)) {
+            return res.status(500).json({ message: 'Veri düzgün alınamadı.' });
+        }
         res.status(200).json(types);
     } catch (error) {
         console.error('Tipler alınırken hata:', error);
         res.status(500).json({ message: 'Tipleri alırken bir hata oluştu.' });
     }
 };
-
-
-
-// Kullanıcıya ait sensörleri getirir
 const getUserSensors = async (req, res) => {
     try {
         const userId = req.user.id; // Middleware'den oturum açan kullanıcının id'si
@@ -142,5 +141,7 @@ const getUserSensors = async (req, res) => {
         res.status(500).json({ message: 'Sensörleri alırken bir hata oluştu.' });
     }
 };
+
+
 
 module.exports = { addTypes, addSensors, getTypes, getUserSensors };
