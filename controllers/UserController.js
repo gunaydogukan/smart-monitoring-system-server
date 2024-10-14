@@ -323,13 +323,9 @@ const getProfile = async (req, res) => {
     try {
         const user = await User.findOne({
             where: { id: req.user.id },
-            include: {
-                model: Company, // Şirket bilgisiyle ilişkilendir
-                as: 'company',
-            },
-            attributes: ['id', 'name', 'lastname', 'email', 'phone', 'password', 'role', 'companyCode'], // Şifreyi de alıyoruz
+            attributes: ['id','companyCode', 'name', 'lastname', 'email', 'phone', 'password', 'role', 'companyCode'], // Şifreyi de alıyoruz
         });
-
+        console.log(user.companyCode);
         if (!user) {
             return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
         }
