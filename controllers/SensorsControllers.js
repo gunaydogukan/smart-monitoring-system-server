@@ -17,7 +17,7 @@ const addSensors = async (req, res) => {
         console.log('Gelen Veri:', req.body); // Burada datanın nasıl geldiğine dikkat edin.
 
         const { datacode, name, lat, lng, def, type_id, village_id,company_code,manager_id } = req.body;
-
+        console.log("geldi")
         // Gerekli alanlar doldurulmuş mu kontrol et
         if (!datacode || !name || !lat || !lng || !type_id || !village_id || !company_code || !manager_id) {
             return res.status(400).json({ message: 'Lütfen tüm gerekli alanları doldurun.' });
@@ -28,7 +28,7 @@ const addSensors = async (req, res) => {
         if (existingSensor) {
             return res.status(400).json({ error: "Bu sensör zaten kayıtlı." });
         }
-
+        console.log("geldi")
         // Yeni sensör oluştur
         const newSensor = await Sensors.create({
             datacode,
@@ -42,7 +42,7 @@ const addSensors = async (req, res) => {
         });
 
         const sensorId = newSensor.id
-
+        console.log("geldi")
         const ownerResponse =addOwner(manager_id,sensorId); //owner table'ına manager ve sensör gönderildi
 
         res.status(201).json({
