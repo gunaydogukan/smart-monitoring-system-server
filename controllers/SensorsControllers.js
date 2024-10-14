@@ -109,4 +109,31 @@ const getTypes = async (req, res) => {
     }
 };
 
-module.exports = {addTypes,addSensors,getTypes};
+
+
+// Kullanıcıya ait sensörleri getirir
+const getUserSensors = async (req, res) => {
+    try {
+        const userId = req.user.id; // Middleware'den oturum açan kullanıcının id'si
+
+        // Kullanıcının sahip olduğu sensörlerin id'lerini bulalım
+        const ownedSensors = await SensorOwner.findAll({
+            where: { sensor_owner: userId },
+            attributes: ['sensor_id'], // Sadece sensor_id alanını alıyoruz
+        });
+
+        const sensorIds = ownedSensors.map(sensor => sensor.sensor_id); // Sensor ID'leri listeye çeviriyoruz
+
+        // Sensörlerin detaylarını Sensors tablosundan alalım
+        const sensors = await Sensors.findAll({
+            where: { id: sensorIds },
+        });
+
+        res.status(200).json(sensors); // Sensörleri döndürüyoruz
+    } catch (error) {
+        console.error('Kullanıcı sensörlerini alırken hata:', error);
+        res.status(500).json({ message: 'Sensörleri alırken bir hata oluştu.' });
+    }
+};
+
+module.exports = { addTypes, addSensors, getTypes, getUserSensors };

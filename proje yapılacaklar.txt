@@ -3,8 +3,7 @@ sensor map gösterimi ve markerı değişecek
 güzel bir front tasarımı ile uğraşılacak
 
 13.10.2024
-Sensöre kurum eklencek database
-admin'in managere sensör tanımlaması...
+
 kurumlar gösterliecek
 kullanıcı düzeltilecek
 sidebar düzeni
