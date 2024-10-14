@@ -13,4 +13,7 @@ router.get('/type', authenticateToken, sensorsController.getTypes);
 // Kullanıcıya ait sensörleri getiren route
 router.get('/sensors', authenticateToken, sensorsController.getUserSensors);
 
+//owner sensörleri gösterme
+router.get('/user-sensors', authenticateToken, sensorsController.getUserSensors);
+
 module.exports = router;

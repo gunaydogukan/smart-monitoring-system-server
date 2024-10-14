@@ -1,6 +1,9 @@
 const Type = require("../models/sensors/SensorTypes");
 const Sensors = require('../models/sensors/Sensors'); // Sensors modelini içe aktar
 const SensorOwner = require('../models/sensors/sensorOwner');
+const Companies = require('../models/users/Companies');
+const Users = require('../models/users/User');
+const { getAllSensors,getSensorIdsByOwner,getSensorsByIds} = require('../services/sensorServices');
 
 const addSensors = async (req, res) => {
     try {
@@ -118,30 +121,83 @@ const getTypes = async (req, res) => {
         res.status(500).json({ message: 'Tipleri alırken bir hata oluştu.' });
     }
 };
+
 const getUserSensors = async (req, res) => {
     try {
-        const userId = req.user.id; // Middleware'den oturum açan kullanıcının id'si
+        const userId = req.user.id;
+        const role = req.user.role;
 
-        // Kullanıcının sahip olduğu sensörlerin id'lerini bulalım
-        const ownedSensors = await SensorOwner.findAll({
-            where: { sensor_owner: userId },
-            attributes: ['sensor_id'], // Sadece sensor_id alanını alıyoruz
-        });
-        console.log(ownedSensors);
-        const sensorIds = ownedSensors.map(sensor => sensor.sensor_id); // Sensor ID'leri listeye çeviriyoruz
+        let data;
 
-        // Sensörlerin detaylarını Sensors tablosundan alalım
-        const sensors = await Sensors.findAll({
-            where: { id: sensorIds },
-        });
+        if (role === "administrator") {
+            data = await getAdminSensors(); // Admin tüm verileri görür
+        } else if (role === "manager") {
+            data = await getManagerSensors(userId); // Manager kendi sensörlerini görür
+        } else if (role === "personal") {
+            data = await getUserOwnedSensors(userId); // Personal kendi sensörlerini görür
+        } else {
+            return res.status(403).json({ message: "Bu role erişim izni yok." });
+        }
 
-        res.status(200).json(sensors); // Sensörleri döndürüyoruz
+        res.status(200).json(data); // Verileri JSON formatında döndür
     } catch (error) {
-        console.error('Kullanıcı sensörlerini alırken hata:', error);
+        console.error('Sensörleri alırken hata:', error);
         res.status(500).json({ message: 'Sensörleri alırken bir hata oluştu.' });
     }
 };
 
+// admin sensör görüntüleme
+const getAdminSensors = async () => {
+
+    const allCompanies = await Companies.findAll({
+        attributes: ['code', 'name'],
+    });
+
+    const managers = await Users.findAll({
+        where: { role: "manager" },
+        attributes: ['companyCode', 'name', 'lastname', 'email', 'phone', 'role'],
+    });
+
+    const personals = await Users.findAll({
+        where: { role: "personal" },
+        attributes: ['companyCode', 'name', 'lastname', 'email', 'phone', 'role'],
+    });
+
+    const sensors = await getAllSensors();
+
+    return { allCompanies, managers, personals, sensors }; //şirketler managerler personeller hepsi burada olur
+};
+
+const getManagerSensors = async (userId) => {
+    const manager = await Users.findOne({
+        where: { id: userId },
+        attributes: ['id', 'name', 'companyCode', 'role'],
+    });
+
+    if (!manager) throw new Error('Manager bulunamadı.');
+
+    const sensorIds = await getSensorIdsByOwner(manager.id);
+    const sensors = await getSensorsByIds(sensorIds);
+
+    return sensors;
+};
+
+const getUserOwnedSensors = async (userId) => {
+    try {
+        const sensorIds = await getSensorIdsByOwner(userId);
+
+        if (sensorIds.length === 0) {
+            return []; // Hiç sensör yoksa boş döndür
+        }
+
+        const sensors = await getSensorsByIds(sensorIds);
+        return sensors;
+    } catch (error) {
+        console.error('Sensörleri alırken hata:', error);
+        throw new Error('Sensörleri alırken bir hata oluştu.');
+    }
+};
 
 
-module.exports = { addTypes, addSensors, getTypes, getUserSensors };
+module.exports = { addTypes, addSensors, getTypes,getUserSensors  };
+
