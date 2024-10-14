@@ -40,14 +40,6 @@ const Sensors = sequelize.define('sensors', {
         type: DataTypes.STRING,
         allowNull: false,
     },
-    creator_id: {
-        type: DataTypes.INTEGER,
-        references: {
-            model: 'users', // Referans alınacak tablo adı (örneğin, users tablosu)
-            key: 'id',
-        },
-        allowNull: false,
-    },
     village_id: {
         type: DataTypes.INTEGER,
         references: {
