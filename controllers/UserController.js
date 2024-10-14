@@ -337,7 +337,38 @@ const getProfile = async (req, res) => {
         res.status(500).json({ error: 'Profil bilgisi alınamadı.' });
     }
 };
-module.exports = { register, login, addAddress ,addCompanies , addManager ,addPersonal,getCompanies,getCities, getProfile};
+
+const getUsers = async (req, res) =>{
+    //token'den gelen rol kontrolü
+    const {role} = req.user;
+    const adminId = req.user.id;
+
+    if (role !== 'administrator' || role !== 'manager') {
+        return res.status(403).json({ message: 'Bu işlemi yapmak için yetkiniz yok.' });
+    }
+
+    if(role ==='administrator'){
+
+        const managers = await User.findAll({
+            where: {
+                role: 'manager',
+                creator_id: adminId },
+        });
+
+        if (!managers.length) {
+            return res.status(404).json({ message: 'Hiç manager bulunamadı.' });
+        }
+
+        res.status(200).json(managers); // manager'i gönderdik
+
+    }else{
+        //user'a sensör tanımlama işlemi sonra yapılacak
+    }
+
+};
+
+
+module.exports = { register, login, addAddress ,addCompanies , addManager ,addPersonal,getCompanies,getCities, getProfile,getUsers};
 
 
 
