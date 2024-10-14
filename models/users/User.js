@@ -56,7 +56,5 @@ const User = sequelize.define('users', {
     },
 }, { timestamps: true });
 
-// Şirket ile kullanıcı arasında ilişkiyi tanımlıyoruz
-User.belongsTo(Companies, { foreignKey: 'companyCode', targetKey: 'code', as: 'company' });
 
 module.exports = User;
