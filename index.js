@@ -18,7 +18,7 @@ app.use('/api', sensorRoutes);
 
 
 sequelize.authenticate()
-    //.sync({ alter: false, force: false })
+    //sync({ alter: false, force: false })
     .then(() => {
         console.log('Veritabanı ve tablolar başarıyla senkronize edildi.');
         app.listen(port, () => {
