@@ -128,7 +128,7 @@ const getUserSensors = async (req, res) => {
             where: { sensor_owner: userId },
             attributes: ['sensor_id'], // Sadece sensor_id alanını alıyoruz
         });
-
+        console.log(ownedSensors);
         const sensorIds = ownedSensors.map(sensor => sensor.sensor_id); // Sensor ID'leri listeye çeviriyoruz
 
         // Sensörlerin detaylarını Sensors tablosundan alalım
