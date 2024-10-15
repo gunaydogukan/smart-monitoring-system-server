@@ -112,6 +112,9 @@ const addTypes = async (req,res) =>{
 const getTypes = async (req, res) => {
     try {
         const types = await Type.findAll();
+        if (!Array.isArray(types)) {
+            return res.status(500).json({ message: 'Veri düzgün alınamadı.' });
+        }
         res.status(200).json(types);
     } catch (error) {
         console.error('Tipler alınırken hata:', error);
@@ -119,8 +122,6 @@ const getTypes = async (req, res) => {
     }
 };
 
-
-// Kullanıcının rolüne göre ilgili sensörleri ve verileri getirir
 const getUserSensors = async (req, res) => {
     try {
         const userId = req.user.id;
@@ -219,6 +220,6 @@ const getUserOwnedSensors = async (userId) => {
     }
 };
 
-//companies için bir servis oluştur
 
 module.exports = { addTypes, addSensors, getTypes,getUserSensors  };
+
