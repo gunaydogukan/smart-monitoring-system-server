@@ -154,31 +154,53 @@ const getAdminSensors = async () => {
 
     const managers = await Users.findAll({
         where: { role: "manager" },
-        attributes: ['companyCode', 'name', 'lastname', 'email', 'phone', 'role'],
+        attributes: ['id','creator_id','companyCode', 'name', 'lastname', 'email', 'phone', 'role'],
     });
 
     const personals = await Users.findAll({
         where: { role: "personal" },
-        attributes: ['companyCode', 'name', 'lastname', 'email', 'phone', 'role'],
+        attributes: ['id','creator_id','companyCode', 'name', 'lastname', 'email', 'phone', 'role'],
     });
 
-    const sensors = await getAllSensors();
+    // Tüm sensör ve sahiplik bilgilerini getir
+    const { sensors, sensorOwners } = await getAllSensors();
 
-    return { allCompanies, managers, personals, sensors }; //şirketler managerler personeller hepsi burada olur
+    // Verileri döndür
+    return {
+        allCompanies,
+        managers,
+        personals,
+        sensors: sensors, // Sensör verileri
+        sensorOwners: sensorOwners, // Sensör sahiplik verileri
+    }; //şirketler managerler personeller hepsi burada olur
 };
 
 const getManagerSensors = async (userId) => {
     const manager = await Users.findOne({
         where: { id: userId },
-        attributes: ['id', 'name', 'companyCode', 'role'],
+        attributes: ['id', 'name','lastname', 'companyCode', 'role'],
+    });
+
+    const personals = await Users.findAll({
+        where: { role: "personal",
+            creator_id:manager.id
+        },
+        attributes: ['id','creator_id','companyCode', 'name', 'lastname', 'email', 'phone', 'role'],
     });
 
     if (!manager) throw new Error('Manager bulunamadı.');
 
     const sensorIds = await getSensorIdsByOwner(manager.id);
-    const sensors = await getSensorsByIds(sensorIds);
-
-    return sensors;
+    const managerSensors = await getSensorsByIds(sensorIds);
+    const personalSensors = await Promise.all(
+        personals.map(async (personal) => {
+            const sensors = await getUserOwnedSensors(personal.id);
+            return { personalId: personal.id, sensors };
+        })
+    );
+    //COMPANYCODE VE NAME ALINACAK ...
+    console.log(personalSensors);
+    return{ manager,personals,managerSensors,personalSensors};
 };
 
 const getUserOwnedSensors = async (userId) => {
