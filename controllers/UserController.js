@@ -23,7 +23,7 @@ const register = async (req, res) => {
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const creator_id = decoded.id;
-
+        console.log(creator_id);
         console.log("Giriş yapan kullanıcının rolü:", decoded.role);
 
         // Geçersiz roller eklenmesin
