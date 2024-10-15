@@ -13,11 +13,21 @@ const User = sequelize.define('users', {
         type: Sequelize.ENUM('administrator', 'manager', 'personal'),
         allowNull: false,
     },
+    creator_id: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: {
+            model: 'users',
+            key: 'id',
+        },
+        onDelete: 'SET NULL',
+        onUpdate: 'CASCADE',
+    },
     companyCode: {
         type: Sequelize.STRING,
         allowNull: true,
         references: {
-            model: 'companies',
+            model: 'Companies',
             key: 'code',
         },
         onDelete: 'SET NULL',

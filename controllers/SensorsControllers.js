@@ -30,7 +30,7 @@ const addSensors = async (req, res) => {
         const existingSensor = await Sensors.findOne({ where: { datacode } });
         if (existingSensor) {
             return res.status(400).json({ error: "Bu sensör zaten kayıtlı." });
-        }
+         }
 
         // Yeni sensör oluştur
         const newSensor = await Sensors.create({
