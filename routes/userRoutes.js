@@ -4,7 +4,7 @@ const userController = require("../controllers/UserController");
 const { authenticateToken, authorizeRole } = require("../middleware/BearerTokenMiddleware");
 
 // Register endpoint: Sadece administrator rolüne sahip kullanıcılar ekleyebilir
-router.post('/register', authenticateToken, authorizeRole(['administrator']), userController.register);
+router.post('/register', authenticateToken, authorizeRole(['administrator','manager']), userController.register);
 
 // Login işlemi için token gerekmez
 router.post('/login', userController.login);

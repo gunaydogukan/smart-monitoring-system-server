@@ -5,12 +5,11 @@ const Districts = require("../models/users/Districts");
 const Neighborhoods = require("../models/users/Neighborhoods");
 const Villages = require("..//models/users/Villages");
 const bcrypt = require("bcrypt");
-
-
 const jwt = require("jsonwebtoken");
 require('dotenv').config();
 const JWT_SECRET = process.env.JWT_SECRET;
 const validRoles = ['manager', 'personal'];
+
  // İzin verilen roller
 
 const register = async (req, res) => {
@@ -27,13 +26,20 @@ const register = async (req, res) => {
 
         console.log("Giriş yapan kullanıcının rolü:", decoded.role);
 
-        // İzin verilmeyen roller eklenmesin (administrator eklenemez)
+        // Geçersiz roller eklenmesin
         if (!validRoles.includes(role)) {
             return res.status(403).json({ error: 'Bu rolü eklemeye yetkiniz yok.' });
         }
 
+        // Telefon numarasının benzersiz olup olmadığını kontrol et
+        const existingUser = await User.findOne({ where: { phone } });
+        if (existingUser) {
+            return res.status(409).json({ error: 'Bu telefon numarası zaten kayıtlı.' }); // 409 Conflict
+        }
+
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        // Yeni kullanıcıyı oluştur
         const newUser = await User.create({
             name,
             lastname,
@@ -42,7 +48,7 @@ const register = async (req, res) => {
             phone,
             role,
             creator_id, // Oturum açan kullanıcının ID'si
-            companyCode, // Şirket kodunu ekliyoruz
+            companyCode, // Şirket kodu
         });
 
         console.log("Eklenen kullanıcı:", newUser);
@@ -50,46 +56,57 @@ const register = async (req, res) => {
         res.status(201).json({ success: true, user: newUser });
     } catch (error) {
         console.error("Kayıt hatası:", error);
-        res.status(500).json({ error: 'Kayıt sırasında bir hata oluştu.' });
+
+        // Unique constraint veya diğer hatalar için kontrol
+        if (error.name === 'SequelizeUniqueConstraintError') {
+            res.status(409).json({ error: 'E-posta veya telefon numarası zaten kayıtlı.' });
+        } else {
+            res.status(500).json({ error: 'Kayıt sırasında bir hata oluştu.' });
+        }
     }
 };
+
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
-        console.log("deneme");
+        console.log("Gelen Body:", req.body);
+
+        // Gelen verileri kontrol et
+        if (!email || !password) {
+            return res.status(400).json({ error: "Email ve şifre gerekli." });
+        }
+
+        console.log("Body:", req.body);
+
         // Kullanıcıyı email ile bul
         const user = await User.findOne({ where: { email } });
-        console.log(user);
+        console.log("Kullanıcı:", user);
+
         if (!user) {
             return res.status(400).json({ error: "Email veya şifre hatalı." });
         }
-        console.log(user.password);
-        // Şifreyi karşılaştır
+
         const isPasswordValid = await bcrypt.compare(password, user.password);
 
-        console.log(password);
         if (!isPasswordValid) {
             return res.status(400).json({ error: "Email veya şifre hatalı." });
         }
-        console.log("deneme")
-        // Token oluştur
+
         const token = jwt.sign(
-            { id: user.id, role: user.role }, // Payload
-            JWT_SECRET, // Secret key
-            { expiresIn: "2h" } // Token süresi
+            { id: user.id, role: user.role },
+            JWT_SECRET,
+            { expiresIn: "2h" }
         );
-        console.log(token);
-        // Yanıt döndür
+
         res.status(200).json({
             success: true,
-            token: token,
+            token,
             user: {
                 id: user.id,
                 email: user.email,
                 role: user.role,
             },
         });
-
     } catch (error) {
         console.error("Giriş hatası:", error);
         res.status(500).json({ error: "Giriş sırasında bir hata oluştu." });
@@ -97,9 +114,10 @@ const login = async (req, res) => {
 };
 
 
+
 const addAddress = async (req, res) => {
     try {
-        const user = req.user;
+        const user = req.user; // Middleware'den gelen kullanıcı bilgisi
 
         // Kullanıcı yetkisi kontrolü
         if (!user || (user.role !== 'administrator' && user.role !== 'manager')) {
@@ -110,7 +128,6 @@ const addAddress = async (req, res) => {
 
         // Şehir kontrolü: Aynı plaka varsa onu kullan, yoksa yeni şehir ekle
         let newCity = await Cities.findOne({ where: { plate } });
-
         if (!newCity) {
             newCity = await Cities.create({ plate, city });
         } else {
@@ -182,8 +199,8 @@ const addAddress = async (req, res) => {
         // Başarılı işlem sonucunda yanıt dön
         res.status(201).json({
             message: "Adres başarıyla eklendi.",
-            villageId: newVillage.id, // Köy ID'si
-            villageName: newVillage.village, // Köy ismi
+            villageId: newVillage.id,
+            villageName: newVillage.village,
         });
 
     } catch (error) {
