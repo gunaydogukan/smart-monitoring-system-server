@@ -24,7 +24,7 @@ const register = async (req, res) => {
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const creator_id = decoded.id;
-
+        console.log(creator_id);
         console.log("Giriş yapan kullanıcının rolü:", decoded.role);
 
         // İzin verilmeyen roller eklenmesin (administrator eklenemez)
@@ -41,7 +41,7 @@ const register = async (req, res) => {
             password: hashedPassword,
             phone,
             role,
-            creator_id, // Oturum açan kullanıcının ID'si
+            creator_id:creator_id, // Oturum açan kullanıcının ID'si
             companyCode, // Şirket kodunu ekliyoruz
         });
 
