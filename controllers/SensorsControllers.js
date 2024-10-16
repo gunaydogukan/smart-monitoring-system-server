@@ -199,13 +199,17 @@ const getManagerSensors = async (userId) => {
             return { personalId: personal.id, sensors };
         })
     );
-    //COMPANYCODE VE NAME ALINACAK ...
     console.log(personalSensors);
     return{ manager,personals,managerSensors,personalSensors};
 };
 
 const getUserOwnedSensors = async (userId) => {
     try {
+        const personal = await Users.findOne({
+            where: { id: userId },
+            attributes: ['name','lastname', 'companyCode', 'role'],
+        });
+
         const sensorIds = await getSensorIdsByOwner(userId);
 
         if (sensorIds.length === 0) {
@@ -213,13 +217,16 @@ const getUserOwnedSensors = async (userId) => {
         }
 
         const sensors = await getSensorsByIds(sensorIds);
-        return sensors;
+
+        return {
+            personal,
+            sensors
+        };
     } catch (error) {
         console.error('Sensörleri alırken hata:', error);
         throw new Error('Sensörleri alırken bir hata oluştu.');
     }
 };
-
 
 module.exports = { addTypes, addSensors, getTypes,getUserSensors  };
 
