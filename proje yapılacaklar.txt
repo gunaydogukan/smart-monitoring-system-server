@@ -1,11 +1,21 @@
-!!!!!!!!!!SENSOR data table dinamik olarak oluşturulacak!!!!!!!!!!!!!!
+SENSOR data table dinamik olarak oluşturulacak  !!!!!!!!!!!!!!
 sensor map gösterimi ve markerı değişecek
-güzel bir front tasarımı ile uğraşılacak
-
-13.10.2024
-
+güzel bir front tasarımı ile uğraşılacak ?
 kurumlar gösterliecek
-kullanıcı düzeltilecek
-sidebar düzeni
-sensorowner table kurulacak = id , sensorowner , sensorİd // sensör kuruma özel eklenebilri birden fazla managere ekleenebilir
+kullanıcı düzeltilecek ?
+sidebar düzeni ?
+
+////
+Admin - personel eklerken => personeli hangi admine tanımlayacağını seçmeli ?
+
+Kurum eklerken Kurumun şehirini direkt şehirler adresinden alabiliriz ve o şehir direkt cites veri tabanına eklenebilir
++ Sensör ekleme sırasında ise sensörü'n adresini eklerken ilk olarak Kurum çıksın ve Kurumun şehiri direkt olarak seçilsin ?
++ sonrasında kurum adminlerine tanımlayabiliriz.
+
+
+//yapıldı ama bug var , manager seçiliyken manager seçimi iptal olunca sensörler gidiyor düzelt
 admin companylere göre managerleri ve userlerı ayrı ayrı görebilir tüm sensörleri, filtreli'de görebilir
+
+
+YAPILAN :
+sensorowner table kurulacak = id , sensorowner , sensorİd
