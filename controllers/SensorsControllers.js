@@ -3,6 +3,7 @@ const Sensors = require('../models/sensors/Sensors'); // Sensors modelini içe a
 const SensorOwner = require('../models/sensors/sensorOwner');
 const Companies = require('../models/users/Companies');
 const Users = require('../models/users/User');
+const { SensorData } = require("../models/sensors/SensorsData");
 const { getAllSensors,getSensorIdsByOwner,getSensorsByIds} = require('../services/sensorServices');
 
 const addSensors = async (req, res) => {
@@ -26,27 +27,30 @@ const addSensors = async (req, res) => {
             return res.status(400).json({ message: 'Lütfen tüm gerekli alanları doldurun.' });
         }
 
+        let newSensor;
         // Sensörün daha önce eklenip eklenmediğini kontrol et
         const existingSensor = await Sensors.findOne({ where: { datacode } });
         if (existingSensor) {
-            return res.status(400).json({ error: "Bu sensör zaten kayıtlı." });
-         }
+            newSensor=existingSensor;
+         }else{
+            // Yeni sensör oluştur
+            newSensor = await Sensors.create({
+                datacode,
+                name,
+                lat: parseFloat(lat),
+                lng: parseFloat(lng),
+                def,
+                type: parseInt(type_id),  // type_id'nin doğru şekilde kullanımı
+                company_code: company_code,
+                village_id: parseInt(village_id),
+            });
+        }
 
-        // Yeni sensör oluştur
-        const newSensor = await Sensors.create({
-            datacode,
-            name,
-            lat: parseFloat(lat),
-            lng: parseFloat(lng),
-            def,
-            type: parseInt(type_id),  // type_id'nin doğru şekilde kullanımı
-            company_code: company_code,
-            village_id: parseInt(village_id),
-        });
+        const newSensorData = await SensorData(newSensor);
+        console.log(newSensorData);
 
         const sensorId = newSensor.id
-        console.log(newSensor.id);
-        console.log(manager_id);
+
         const ownerResponse = await addOwner(manager_id, sensorId);
 
         // Başarılı yanıt döndürme
@@ -66,6 +70,17 @@ const addOwner = async (managerId, sensorId) => {
     try {
 
         console.log(`Manager ${managerId} ile Sensor ${sensorId} bağlanıyor.`);
+
+        const existingOwner = await SensorOwner.findOne({
+            where: {
+                sensor_owner: parseInt(managerId),
+                sensor_id: parseInt(sensorId),
+            }
+        });
+
+        if(existingOwner){
+            return { success: true, message: 'Owner zaten bu sensöre sahip.', owner: existingOwner };
+        }
 
         // SensorOwner kaydı oluşturma
         const newOwner = await SensorOwner.create({

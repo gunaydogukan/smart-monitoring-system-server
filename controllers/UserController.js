@@ -358,6 +358,21 @@ const getProfile = async (req, res) => {
             return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
         }
 
+
+        // Kullanıcının companyCode'una göre şirketi bulma
+        let company = await Company.findOne({
+            where: { code: user.companyCode },
+            attributes: ['name', 'code'], // Şirket bilgileri
+        });
+
+        // Şirket bulunamazsa hata döndür
+        if (!company) {
+            if(user.role!=="administrator"){
+                return res.status(404).json({ error: 'Kullanıcının bağlı olduğu şirket bulunamadı.' });
+            }else{
+                company = "Admin kuruma sahip değildir.";
+            }
+
         let company = null;
 
         // Eğer kullanıcı administrator ise company bilgisi olmayacak
@@ -367,6 +382,7 @@ const getProfile = async (req, res) => {
                 where: { code: user.companyCode },
                 attributes: ['name', 'code'], // Şirket bilgileri
             });
+
         }
 
         // Kullanıcı ve şirket bilgilerini birleştirip dön
