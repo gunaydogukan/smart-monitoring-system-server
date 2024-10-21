@@ -217,7 +217,7 @@ const addCompanies = async (req, res) => {
             return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
         }
 
-        const { code, name, city_id } = req.body;
+        const { code, name, plate, city } = req.body;
 
         // Aynı kodla bir şirket olup olmadığını kontrol et
         const existingCompany = await Company.findOne({ where: { code } });
@@ -225,11 +225,18 @@ const addCompanies = async (req, res) => {
             return res.status(400).json({ error: "Bu kurum zaten kayıtlı." });
         }
 
+        // Şehir kontrolü ve yeni şehir ekleme (eğer gerekirse)
+        let newCity;
+        const existingCity = await Cities.findOne({ where: { plate } });
+        if (!existingCity) {
+            newCity = await Cities.create({ plate, city });
+        }
+
         // Yeni bir kurum oluştur
         const newCompany = await Company.create({
             code,
             name,
-            city_id,
+            plate, // Şirketin bağlı olduğu şehrin plakası
             creator_id: user.id, // Şirketi ekleyen kullanıcının ID'si
         });
 
@@ -239,6 +246,8 @@ const addCompanies = async (req, res) => {
         res.status(500).json({ error: "Ekleme sırasında bir hata oluştu." });
     }
 };
+
+
 
 const addManager = async (req, res) => {
     try {
@@ -343,12 +352,12 @@ const getProfile = async (req, res) => {
         const user = await User.findOne({
             where: { id: req.user.id },
             attributes: ['id', 'companyCode', 'name', 'lastname', 'email', 'phone', 'role'], // Kullanıcı bilgileri
-
         });
 
         if (!user) {
             return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
         }
+
 
         // Kullanıcının companyCode'una göre şirketi bulma
         let company = await Company.findOne({
@@ -363,25 +372,31 @@ const getProfile = async (req, res) => {
             }else{
                 company = "Admin kuruma sahip değildir.";
             }
+
+        let company = null;
+
+        // Eğer kullanıcı administrator ise company bilgisi olmayacak
+        if (user.role !== 'administrator' && user.companyCode) {
+            // Kullanıcının companyCode'una göre şirketi bulma
+            company = await Company.findOne({
+                where: { code: user.companyCode },
+                attributes: ['name', 'code'], // Şirket bilgileri
+            });
+
         }
 
         // Kullanıcı ve şirket bilgilerini birleştirip dön
         const response = {
             ...user.toJSON(),
-            companyName: company.name,
+            companyName: user.role === 'administrator' ? null : (company ? company.name : null), // Eğer administrator ise companyName null
         };
 
         res.status(200).json(response);
     } catch (error) {
         console.error('Profil bilgisi hatası:', error);
-        res.status(500).json({ error: 'Profil bilgisi alınamadı.', message: error.message });
+        res.status(500).json({ error: 'Profil bilgisi alınamadı.' });
     }
 };
-
-
-
-
-
 
 const getUsers = async (req, res) =>{
     //token'den gelen rol kontrolü
