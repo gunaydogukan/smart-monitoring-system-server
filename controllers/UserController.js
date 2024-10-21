@@ -345,20 +345,24 @@ const getProfile = async (req, res) => {
             attributes: ['id', 'companyCode', 'name', 'lastname', 'email', 'phone', 'role'], // Kullanıcı bilgileri
 
         });
-        console.log(user.companyCode);
+
         if (!user) {
             return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
         }
 
         // Kullanıcının companyCode'una göre şirketi bulma
-        const company = await Company.findOne({
+        let company = await Company.findOne({
             where: { code: user.companyCode },
             attributes: ['name', 'code'], // Şirket bilgileri
         });
 
         // Şirket bulunamazsa hata döndür
         if (!company) {
-            return res.status(404).json({ error: 'Kullanıcının bağlı olduğu şirket bulunamadı.' });
+            if(user.role!=="administrator"){
+                return res.status(404).json({ error: 'Kullanıcının bağlı olduğu şirket bulunamadı.' });
+            }else{
+                company = "Admin kuruma sahip değildir.";
+            }
         }
 
         // Kullanıcı ve şirket bilgilerini birleştirip dön
