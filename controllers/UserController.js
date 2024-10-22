@@ -14,7 +14,7 @@ const validRoles = ['manager', 'personal'];
 
 const register = async (req, res) => {
     try {
-        const { name, lastname, email, password, phone, role, companyCode } = req.body;
+        const { name, lastname, email, password, phone, role, companyCode, creator_id: formCreatorId } = req.body;
 
         // Token'dan creator bilgilerini alıyoruz
         const authHeader = req.headers.authorization;
@@ -22,9 +22,14 @@ const register = async (req, res) => {
         if (!token) return res.status(401).json({ error: 'Yetkisiz erişim.' });
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const creator_id = decoded.id;
-        console.log(creator_id);
-        console.log("Giriş yapan kullanıcının rolü:", decoded.role);
+        let creator_id = decoded.id; // Varsayılan olarak oturum açan kullanıcının ID'si
+
+        // Eğer personal ekleniyorsa, formdan gelen manager ID'sini kullan
+        if (role === 'personal') {
+            creator_id = formCreatorId; // Personal için formdan gelen creator_id kullanılır
+        }
+
+        console.log("Kayıt edilen kullanıcının creator_id'si:", creator_id);
 
         // Geçersiz roller eklenmesin
         if (!validRoles.includes(role)) {
@@ -47,7 +52,7 @@ const register = async (req, res) => {
             password: hashedPassword,
             phone,
             role,
-            creator_id, // Oturum açan kullanıcının ID'si
+            creator_id, // Manager ekleniyorsa token'dan, personal ekleniyorsa formdan
             companyCode, // Şirket kodu
         });
 
@@ -367,13 +372,13 @@ const getProfile = async (req, res) => {
 
         // Şirket bulunamazsa hata döndür
         if (!company) {
-            if(user.role!=="administrator"){
-                return res.status(404).json({ error: 'Kullanıcının bağlı olduğu şirket bulunamadı.' });
-            }else{
+            if (user.role !== "administrator") {
+                return res.status(404).json({error: 'Kullanıcının bağlı olduğu şirket bulunamadı.'});
+            } else {
                 company = "Admin kuruma sahip değildir.";
             }
-
-        let company = null;
+        }
+        company = null;
 
         // Eğer kullanıcı administrator ise company bilgisi olmayacak
         if (user.role !== 'administrator' && user.companyCode) {
@@ -392,7 +397,8 @@ const getProfile = async (req, res) => {
         };
 
         res.status(200).json(response);
-    } catch (error) {
+    }
+        catch (error) {
         console.error('Profil bilgisi hatası:', error);
         res.status(500).json({ error: 'Profil bilgisi alınamadı.' });
     }

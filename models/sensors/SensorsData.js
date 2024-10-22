@@ -1,12 +1,18 @@
 const Sequelize = require('sequelize');
 const sequelize = require('../../config/database');
+const { DataTypes } = require('sequelize');
 
 // Dinamik sensör data table oluşturma
 const SensorData = async (sensor) => {
-    const tableName = `${sensor.company_code}_${sensor.datacode}`;
+    const tableName = `${sensor.datacode}`;
 
     // Sensör tipine göre tablo yapısı belirleniyor
-    const tableFields = sensor.type === 2 ? {
+    const tableFields = sensor.type === 1 ? {
+        id: {
+            type: Sequelize.INTEGER,
+            primaryKey: true,
+            autoIncrement: true // id otomatik artan olsun
+        },
         N001: { type: Sequelize.FLOAT, allowNull: false },
         S001: { type: Sequelize.FLOAT, allowNull: false },
         N002: { type: Sequelize.FLOAT, allowNull: false },
@@ -15,7 +21,11 @@ const SensorData = async (sensor) => {
         S003: { type: Sequelize.FLOAT, allowNull: false },
         datetime: { type: Sequelize.DATE, allowNull: false }, // Tarih ve saat tek alan
     } : {
-        id: { type: Sequelize.INTEGER, allowNull: false },
+        id: {
+            type: Sequelize.INTEGER,
+            primaryKey: true,
+            autoIncrement: true // id otomatik artan olsun
+        },
         D001: { type: Sequelize.STRING, allowNull: false },
         datetime: { type: DataTypes.DATE, allowNull: false }, // Tarih ve saat tek alan
     };
@@ -23,6 +33,7 @@ const SensorData = async (sensor) => {
     // Dinamik tabloyu oluştur
     const SensorDataTable = sequelize.define(tableName, tableFields, {
         timestamps: false, // createdAt, updatedAt gibi alanlar olmaması için
+        freezeTableName: true, // Tablonun isminin değiştirilmesini engelle
     });
 
     // Eğer tablo yoksa oluşturuluyor
