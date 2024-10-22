@@ -21,7 +21,6 @@ const addSensors = async (req, res) => {
         console.log('Gelen Veri:', req.body); // Burada datanın nasıl geldiğine dikkat edin.
 
         const { datacode, name, lat, lng, def, type_id, village_id,company_code,manager_id } = req.body;
-
         // Gerekli alanlar doldurulmuş mu kontrol et
         if (!datacode || !name || !lat || !lng || !type_id || !village_id || !company_code || !manager_id) {
             return res.status(400).json({ message: 'Lütfen tüm gerekli alanları doldurun.' });

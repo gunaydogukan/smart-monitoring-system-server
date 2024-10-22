@@ -9,7 +9,6 @@ const jwt = require("jsonwebtoken");
 require('dotenv').config();
 const JWT_SECRET = process.env.JWT_SECRET;
 const validRoles = ['manager', 'personal'];
-
  // İzin verilen roller
 
 const register = async (req, res) => {
@@ -367,14 +366,14 @@ const getProfile = async (req, res) => {
 
         // Şirket bulunamazsa hata döndür
         if (!company) {
-            if(user.role!=="administrator"){
-                return res.status(404).json({ error: 'Kullanıcının bağlı olduğu şirket bulunamadı.' });
-            }else{
+            if (user.role !== "administrator") {
+                return res.status(404).json({error: 'Kullanıcının bağlı olduğu şirket bulunamadı.'});
+            } else {
                 company = "Admin kuruma sahip değildir.";
             }
 
-        let company = null;
-
+            company = null;
+        }
         // Eğer kullanıcı administrator ise company bilgisi olmayacak
         if (user.role !== 'administrator' && user.companyCode) {
             // Kullanıcının companyCode'una göre şirketi bulma
