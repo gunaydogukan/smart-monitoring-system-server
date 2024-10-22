@@ -242,5 +242,5 @@ const getUserOwnedSensors = async (userId) => {
     }
 };
 
-module.exports = { addTypes, addSensors, getTypes,getUserSensors  };
+module.exports = { addTypes, addSensors, getTypes,getUserSensors };
 
