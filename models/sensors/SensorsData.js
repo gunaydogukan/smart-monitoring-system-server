@@ -7,7 +7,9 @@ const SensorData = async (sensor) => {
     const tableName = `${sensor.datacode}`;
 
     // Sensör tipine göre tablo yapısı belirleniyor
+
     const tableFields = sensor.type === 1 ? {
+
         id: {
             type: Sequelize.INTEGER,
             primaryKey: true,
