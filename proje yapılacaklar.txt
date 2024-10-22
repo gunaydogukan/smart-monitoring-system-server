@@ -1,26 +1,32 @@
-güzel bir front tasarımı ile uğraşılacak ?
-kurumlar gösterliecek
-kullanıcı düzeltilecek ?
-sidebar düzeni ?
-sensordata table'da companyName kaldırılıcak,ve yeni databaser eklenecek
-loglama yapılacak
+
+//İLERLEYEN ZAMANLARDA YAPILACAKLAR
+
+güzel bir front tasarımı ile uğraşılacak
+sidebar düzeni
+loglama yapılacak,
+ip kontrolü  (hocaya tekrar sorulacak)
+sensordata table'da yeni databaser eklenecek
+sensor markerlerı düzenlenecek daha sistematik olacak
+
+Kurumlar page'ine kurumlara tıklandığında o kuruma ait olan sensör sayısı , manaager sayısı , personel sayısı gibi bilgiler gözükebilir.. (sadece admin)
++Admin ise kendi kurumunda olan toplam sensör toplam personel ve toplam admin sayısını göreiblir (değişebilir , sadece admin)
+
+//ÖNCELİKLİ YAPILACAKLAR
+
+Admin - personel eklerken => personeli hangi managere tanımlayacağını seçmeli
+
++Sensör eklerken kurum seçildikten sonra kurumun , managerleri filtrelensin ve sensör hangi managere tanımlanacaksa o seçilsin (admin seçimi)
++admin personele sensör eklemeyecek... onu manager belirler
++
 
 
-Admin - personel eklerken => personeli hangi managere tanımlayacağını seçmeli ?
 
-Kurum eklerken Kurumun şehirini direkt şehirler adresinden alabiliriz ve o şehir direkt cites veri tabanına eklenebilir
-+ Sensör ekleme sırasında ise sensörü'n adresini eklerken ilk olarak Kurum çıksın ve Kurumun şehiri direkt olarak seçilsin ?
-+ sonrasında kurum adminlerine tanımlayabiliriz.
-
-
-
-
-
-
-YAPILAN :
+//YAPILAN :
 sensorowner table kurulacak = id , sensorowner , sensorİd
 sensor map gösterimi ve markerı değişti
 SENSOR data table dinamik olarak oluşturuldu
+kurumlar gösterildi
+Kurum eklerken Kurumun şehirini direkt şehirler apisinden alınıyor ve o şehir direkt cites veri tabanına ekleniyor
 
 // bug var , manager seçiliyken manager seçimi iptal olunca sensörler gidiyor düzelt
 admin companylere göre managerleri ve userlerı ayrı ayrı görebilir tüm sensörleri, filtreli'de görebilir
