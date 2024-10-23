@@ -38,6 +38,8 @@ router.get('/companies', authenticateToken, userController.getCompanies);
 
 //kullanıcı görüntüleme işlerini sadece manager ve admin yapabilir
 router.get('/users',authenticateToken,userController.getUsers);
+router.get('/managers',authenticateToken,userController.getManagersByCompany);
+router.get('/personals',authenticateToken,userController.getPersonalsByCompany);
 
 
 module.exports = router;
