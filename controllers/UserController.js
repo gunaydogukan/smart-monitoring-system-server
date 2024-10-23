@@ -377,8 +377,8 @@ const getProfile = async (req, res) => {
                 company = "Admin kuruma sahip değildir.";
             }
 
-        company = null;
 
+        company = null;
         }
 
         // Eğer kullanıcı administrator ise company bilgisi olmayacak
