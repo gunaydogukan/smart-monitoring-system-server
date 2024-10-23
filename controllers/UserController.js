@@ -376,6 +376,8 @@ const getProfile = async (req, res) => {
             } else {
                 company = "Admin kuruma sahip değildir.";
             }
+
+
         company = null;
         }
 
@@ -431,9 +433,68 @@ const getUsers = async (req, res) =>{
     }
 
 };
+const getManagersByCompany = async (req, res) => {
+    const { companyCode } = req.query;
+
+    try {
+        let managers;
+
+        if (companyCode) {
+            // Eğer companyCode varsa, o şirkete ait manager'ları getir
+            managers = await User.findAll({
+                where: {
+                    companyCode: companyCode,
+                    role: 'manager' // Sadece manager rolü olanları getir
+                }
+            });
+        } else {
+            // Eğer companyCode yoksa, tüm manager'ları getir
+            managers = await User.findAll({
+                where: {
+                    role: 'manager' // Sadece manager rolü olanları getir
+                }
+            });
+        }
+
+        res.json(managers);
+    } catch (error) {
+        console.error('Manager verisi çekilemedi:', error);
+        res.status(500).json({ message: 'Manager verisi çekilemedi' });
+    }
+};
+
+const getPersonalsByCompany = async (req, res) => {
+    const { companyCode } = req.query;
+
+    try {
+        let personals;
+
+        if (companyCode) {
+            // Eğer companyCode varsa, o şirkete ait personal'ları getir
+            personals = await User.findAll({
+                where: {
+                    companyCode: companyCode,
+                    role: 'personal' // Sadece personal rolü olanları getir
+                }
+            });
+        } else {
+            // Eğer companyCode yoksa, tüm personal'ları getir
+            personals = await User.findAll({
+                where: {
+                    role: 'personal' // Sadece personal rolü olanları getir
+                }
+            });
+        }
+
+        res.json(personals);
+    } catch (error) {
+        console.error('Personal verisi çekilemedi:', error);
+        res.status(500).json({ message: 'Personal verisi çekilemedi' });
+    }
+};
 
 
-module.exports = { register, login, addAddress ,addCompanies , addManager ,addPersonal,getCompanies,getCities, getProfile,getUsers};
+module.exports = { register, login, addAddress ,addCompanies , addManager ,addPersonal,getCompanies,getCities, getProfile,getUsers,getManagersByCompany,getPersonalsByCompany};
 
 
 
