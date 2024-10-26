@@ -117,8 +117,6 @@ const login = async (req, res) => {
     }
 };
 
-
-
 const addAddress = async (req, res) => {
     try {
         const user = req.user; // Middleware'den gelen kullanıcı bilgisi
@@ -127,6 +125,25 @@ const addAddress = async (req, res) => {
         if (!user || (user.role !== 'administrator' && user.role !== 'manager')) {
             return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
         }
+
+        /*
+                       plate: parseInt(selectedProvinceId),
+            city: searchProvince,
+            districts: [
+                {
+                    district: searchDistrict,
+                    neighborhoods: selectedNeighborhoodId ? [
+                        {
+                            neighborhood: searchNeighborhood,
+                            villages: [village],
+                        },
+                    ] : [],   //burada mahalle' boşsa ' eğer boş dönecek...
+                    villages: selectedNeighborhoodId ? [] : [village],
+                },
+            ],
+        };
+        Gelen veri bu yapıda geliyor
+         */
 
         const { plate, city, districts } = req.body;
 
@@ -144,7 +161,7 @@ const addAddress = async (req, res) => {
 
         // İlçe, mahalle ve köy ekleme işlemleri
         for (const districtData of districts) {
-            const { district, neighborhoods } = districtData;
+            const { district, neighborhoods, villages } = districtData;
 
             // İlçe kontrolü ve ekleme
             newDistrict = await Districts.findOne({
@@ -160,25 +177,59 @@ const addAddress = async (req, res) => {
                 console.log(`Bu ilçe zaten kayıtlı: ${newDistrict.district}`);
             }
 
-            for (const neighborhoodData of neighborhoods) {
-                const { neighborhood, villages } = neighborhoodData;
+            // Mahalle ekleme işlemi , eğer mahalle girildiyse...
+            if (neighborhoods && neighborhoods.length > 0) {
+                for (const neighborhoodData of neighborhoods) {
+                    const { neighborhood, villages } = neighborhoodData;
 
-                // Mahalle kontrolü ve ekleme
+                    // Mahalle kontrolü ve ekleme
+                    newNeighborhood = await Neighborhoods.findOne({
+                        where: { neighborhood, district_id: newDistrict.id },
+                    });
+
+                    if (!newNeighborhood) {
+                        newNeighborhood = await Neighborhoods.create({
+                            district_id: newDistrict.id,
+                            neighborhood,
+                        });
+                    } else {
+                        console.log(`Bu mahalle zaten kayıtlı: ${newNeighborhood.neighborhood}`);
+                    }
+
+                    // Köy ekleme işlemi
+                    for (const village of villages) {
+                        newVillage = await Villages.findOne({
+                            where: { village, neighborhood_id: newNeighborhood.id },
+                        });
+
+                        if (!newVillage) {
+                            newVillage = await Villages.create({
+                                neighborhood_id: newNeighborhood.id,
+                                village,
+                            });
+                        } else {
+                            console.log(`Bu köy zaten kayıtlı: ${newVillage.village}`);
+                        }
+                    }
+                }
+            }
+            else {// Mahalle yoksa sadece köyleri ekle
+
                 newNeighborhood = await Neighborhoods.findOne({
-                    where: { neighborhood, district_id: newDistrict.id },
+                    where: { neighborhood: `${district} - Mahalle_Secilmedi`, district_id: newDistrict.id },
                 });
 
                 if (!newNeighborhood) {
                     newNeighborhood = await Neighborhoods.create({
                         district_id: newDistrict.id,
-                        neighborhood,
+                        neighborhood: `${district} - Mahalle_Secilmedi`,
                     });
                 } else {
                     console.log(`Bu mahalle zaten kayıtlı: ${newNeighborhood.neighborhood}`);
                 }
 
                 for (const village of villages) {
-                    // Köy kontrolü ve ekleme
+
                     newVillage = await Villages.findOne({
                         where: { village, neighborhood_id: newNeighborhood.id },
                     });
@@ -206,6 +257,7 @@ const addAddress = async (req, res) => {
             villageId: newVillage.id,
             villageName: newVillage.village,
         });
+
 
     } catch (error) {
         console.error("Adres ekleme hatası:", error);
@@ -251,8 +303,6 @@ const addCompanies = async (req, res) => {
     }
 };
 
-
-
 const addManager = async (req, res) => {
     try {
         // Kullanıcı bilgilerini doğrula (örneğin, JWT token üzerinden)
@@ -289,6 +339,7 @@ const addManager = async (req, res) => {
         res.status(500).json({ error: "Manager ekleme sırasında bir hata oluştu." });
     }
 };
+
 const addPersonal = async (req, res) => {
     try {
         // Kullanıcı bilgilerini doğrula (örneğin, JWT token üzerinden)
@@ -347,8 +398,6 @@ const getCities = async (req, res) => {
         res.status(500).json({ error: 'Şehirleri yüklerken hata oluştu.' });
     }
 };
-
-
 
 const getProfile = async (req, res) => {
     try {
@@ -433,6 +482,7 @@ const getUsers = async (req, res) =>{
     }
 
 };
+
 const getManagersByCompany = async (req, res) => {
     const { companyCode } = req.query;
 
@@ -492,7 +542,6 @@ const getPersonalsByCompany = async (req, res) => {
         res.status(500).json({ message: 'Personal verisi çekilemedi' });
     }
 };
-
 
 module.exports = { register, login, addAddress ,addCompanies , addManager ,addPersonal,getCompanies,getCities, getProfile,getUsers,getManagersByCompany,getPersonalsByCompany};
 

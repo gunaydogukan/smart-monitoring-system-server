@@ -5,33 +5,32 @@ güzel bir front tasarımı ile uğraşılacak
 sidebar düzeni
 
 loglama yapılacak,
-ip kontrolü  (hocaya tekrar sorulacak)
-
-sensordata table için yeni database eklenecek sensorData table' lar yeni olan database içerisinde tutulucak
+ip kontrolü
 
 sensor markerlerı düzenlenecek daha sistematik olacak
 
 Kurumlar page'ine kurumlara tıklandığında o kuruma ait olan sensör sayısı , manaager sayısı , personel sayısı gibi bilgiler gözükebilir.. (sadece admin)
 +Admin ise kendi kurumunda olan toplam sensör toplam personel ve toplam admin sayısını göreiblir (değişebilir , sadece admin)
 
+sensorcontroller' add sensor 'de olan metotta...
+const newSensorData = await SensorData(newSensor); //Bu tablonun var olup olmadığı kontrolü yapılabilir // yoksa ekliyo varsa zaten eklemiyo ...
+
 //ÖNCELİKLİ YAPILACAKLAR
 
 
 
+
 //YAPILAN :
+
 sensorowner table kurulacak = id , sensorowner , sensorİd
-
 sensor map gösterimi ve markerı değişti
-
 SENSOR data table dinamik olarak oluşturuldu
-
 kurumlar gösterildi
-
 Kurum eklerken Kurumun şehirini direkt şehirler apisinden alınıyor ve o şehir direkt cites veri tabanına ekleniyor
-
 Admin - personel eklerken => personeli hangi managere tanımlayacağını seçmeli
-
 +Sensör eklerken kurum seçildikten sonra kurumun , managerleri filtrelensin ve sensör hangi managere tanımlanacaksa o seçilsin (admin seçimi)
 +admin personele sensör eklemeyecek... onu manager belirler
-
+sensordata table için yeni database eklendi sensorData table' lar yeni olan database içerisinde tutuluyor
+60 sensör ve 60 data table eklendi
+SensorChek yeni proje dosyası olarak yapıldı(opsyonel-evrimhoca isteği)
 
