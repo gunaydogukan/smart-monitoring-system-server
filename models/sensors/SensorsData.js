@@ -59,4 +59,5 @@ const SensorData = async (sensor) => {
 };
 
 
-module.exports = { SensorData };
+
+module.exports = { SensorData};

@@ -5,6 +5,7 @@ const { authenticateToken } = require("../middleware/BearerTokenMiddleware");
 
 // Sensör ekleme ve tür ekleme
 router.post('/type', authenticateToken, sensorsController.addTypes);
+
 router.post('/sensors', authenticateToken, sensorsController.addSensors);
 
 // Sensör türlerini alma
@@ -15,5 +16,6 @@ router.get('/sensors', authenticateToken, sensorsController.getUserSensors);
 
 //owner sensörleri gösterme
 router.get('/user-sensors', authenticateToken, sensorsController.getUserSensors);
+
 
 module.exports = router;
