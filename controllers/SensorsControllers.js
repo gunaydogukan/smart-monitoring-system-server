@@ -3,7 +3,7 @@ const Sensors = require('../models/sensors/Sensors'); // Sensors modelini içe a
 const SensorOwner = require('../models/sensors/sensorOwner');
 const Companies = require('../models/users/Companies');
 const Users = require('../models/users/User');
-const { SensorData } = require("../models/sensors/SensorsData");
+const { SensorData } = require("../models/sensors/SensorsData"); //sensor data table'a eklemek için
 const { getAllSensors,getSensorIdsByOwner,getSensorsByIds} = require('../services/sensorServices');
 
 const addSensors = async (req, res) => {
