@@ -4,6 +4,7 @@ const Cities = require("../models/users/Cities");
 const Districts = require("../models/users/Districts");
 const Neighborhoods = require("../models/users/Neighborhoods");
 const Villages = require("..//models/users/Villages");
+const { getAllCompanies } = require('../services/companyServices');
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 require('dotenv').config();
@@ -380,8 +381,8 @@ const addPersonal = async (req, res) => {
 // Tüm şirketleri listeleme
 const getCompanies = async (req, res) => {
     try {
-        const companies = await Company.findAll();
-        res.status(200).json(companies);
+        const companies = await getAllCompanies(); //servicesten çekiyor ...
+        res.status(200).json( companies);
     } catch (error) {
         console.error('Şirketleri getirirken hata:', error);
         res.status(500).json({ error: 'Şirketler getirilemedi.' });
@@ -543,7 +544,73 @@ const getPersonalsByCompany = async (req, res) => {
     }
 };
 
-module.exports = { register, login, addAddress ,addCompanies , addManager ,addPersonal,getCompanies,getCities, getProfile,getUsers,getManagersByCompany,getPersonalsByCompany};
+const getUserCount = async (req,res) =>{
+    const {role} = req.user; //giren kişinin bilgilerini alınır
+    const companies = await getAllCompanies();
+
+    //bu işlevi sadece admin görebilir
+    if(role != 'administrator'){
+        return "";
+    }
+
+    //kullanıcıları alır
+    const users = await User.findAll({
+        attributes : ['companyCode' , 'role'],
+    });
+
+    console.log(companies);
+
+    //gruplama işlemi burada yapılıyor
+    //reduce = bir diziyi belirli kurala göre tek değer veya karmaşık bir yapıya dönüştürür
+    //bu fonk sırasıyla bir işlem yapar acc (accumulator) güncelleyerek son sonuç üretir
+    const groupedUserCounts = users.reduce((acc, user) => {
+        const {companyCode,role} = user;
+        console.log("acc değeri = ",acc);
+        console.log("userlar = ",user);
+        console.log("companyCode = ",companyCode);
+        console.log("role = ",role);
+
+        //burada bir yapı oluşturduk
+        if((role !== 'administrator' && companyCode!==null) &&!acc[companyCode]){
+            acc[companyCode] = { total: 0, managerCount: 0, personalCount: 0 };
+        }
+
+        if((role !== 'administrator' && companyCode!==null)){
+            acc[companyCode].total +=1; //yapıdaki totali bir arttır
+        }
+
+        if(role === "manager"){
+            acc[companyCode].managerCount+=1;
+        }
+
+        if(role === "personal"){
+            acc[companyCode].personalCount+=1;
+
+        }
+        return acc; //sonucu döndür
+    },{});
+    console.log("klhkljhjklhlkjhlkhk",groupedUserCounts);
+    //companies ' lere göre sonuçları göster
+    const result = companies.map(company =>{
+        const companyCode = company.dataValues.code; // 'code' alanı 'companyCode' olarak kullanılıyor
+        //eğer listede eşleşiyorsa yaz   //eşleşmiyorsa 0
+        const userCounts = groupedUserCounts[companyCode] || { total: 0, managerCount: 0, personalCount: 0 };
+        console.log("userCount = ",userCounts);
+        return {
+            id:company.dataValues.id,
+            code:companyCode,
+            name: company.dataValues.name, // Şirket ismi için 'name' alanı kullanılıyor
+            plate:company.dataValues.plate,
+            total: userCounts.total,
+            mcount: userCounts.managerCount,
+            pcount: userCounts.personalCount
+        };
+    });
+
+    res.status(200).json(result);
+};
+
+module.exports = { register, login, addAddress ,addCompanies , addManager ,addPersonal,getCompanies,getCities, getProfile,getUsers,getManagersByCompany,getPersonalsByCompany,getUserCount};
 
 
 
