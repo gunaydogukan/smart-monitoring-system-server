@@ -41,5 +41,8 @@ router.get('/users',authenticateToken,userController.getUsers);
 router.get('/managers',authenticateToken,userController.getManagersByCompany);
 router.get('/personals',authenticateToken,userController.getPersonalsByCompany);
 
+//Kurumlar'ın gösterildiği bölümde , kullanıcı sayıları ve sensör sayıları'da gözükür.
+router.get('/companiesCount',authenticateToken,userController.getUserCount)
+
 
 module.exports = router;
