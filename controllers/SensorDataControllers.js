@@ -15,33 +15,85 @@ const getTableColumns = async (tableName) => {
     return columns.map(col => col.COLUMN_NAME); //sadece sütün adları döndürür
 };
 
+// Tabloyu bulma fonksiyonu
+const findTable = async (code) => {
+    const tableName = code;
+
+    try {
+        // Tabloyu doğrula
+        const result = await sequelize.query(`SELECT * FROM ${tableName} LIMIT 1`, {
+            type: Sequelize.QueryTypes.SELECT,
+        });
+        return result; // Tabloyu döndür
+    } catch (error) {
+        console.error('Tablo bulunamadı veya sorgu hatası:', error);
+        return null;
+    }
+};
+
+//veri yoksa, en son olan verileri getir
+const getLatestData  = async (tableName, selectedColumns,grouping) => {
+
+    const query = `
+        SELECT ${selectedColumns.join(", ")}
+        FROM ${tableName}
+        WHERE time = (SELECT MAX(time) FROM ${tableName})
+        GROUP BY DATE_FORMAT(time, '${grouping}')
+        ORDER BY time ASC
+    `;
+
+    return await sequelize.query(query, {
+        type: Sequelize.QueryTypes.SELECT,
+    });
+
+};
+
 // Zaman aralığına göre dinamik veri çekme
 const getSensorDataByInterval = async (tableName, interval) => {
     let dateRangeStart, dateRangeEnd;
     const endOfRange = new Date();
     let grouping;
-
+    console.log(interval);
     switch (interval) {
-        case 'dakikalık':
+        case '1 Gün': // 5' dakikada bir
             dateRangeStart = new Date(endOfRange.getTime() - 24 * 60 * 60 * 1000); // Son 24 saat
             grouping = '%Y-%m-%d %H:%i'; // Dakika bazında
             break;
-        case 'saatlik':
+        case '1 Hafta':
             dateRangeStart = new Date(endOfRange.getTime() - 7 * 24 * 60 * 60 * 1000); // Son 7 gün
             grouping = '%Y-%m-%d %H'; // Saat bazında
             break;
-        case 'günlük':
+        case '1 Ay':
             dateRangeStart = new Date(endOfRange.getTime() - 30 * 24 * 60 * 60 * 1000); // Son 30 gün
             dateRangeEnd = endOfRange; // Bugüne kadar olan son 30 gün
             grouping = '%Y-%m-%d'; // Gün bazında gruplama
             break;
-        case 'aylık':
+        case '3 Ay':
+            dateRangeStart = new Date(endOfRange.getTime() - 3*30 * 24 * 60 * 60 * 1000); // Son 90 gün
+            dateRangeEnd = endOfRange; // Bugüne kadar olan son 30 gün
+            grouping = '%Y-%m-%d'; // Gün bazında gruplama
+            break;
+        case '6 Ay':
+            dateRangeStart = new Date(endOfRange.getTime() - 6*30 * 24 * 60 * 60 * 1000); // Son 120 gün
+            dateRangeEnd = endOfRange; // Bugüne kadar olan son 30 gün
+            grouping = '%Y-%m-%d'; // Gün bazında gruplama
+            break;
+        case '1 Yıl ':
             dateRangeStart = new Date(endOfRange.setFullYear(endOfRange.getFullYear() - 1)); // Son 1 yıl
             grouping = '%Y-%m'; // Ay bazında
             break;
-        case 'yıllık':
+        case '5 Yıllık':
             dateRangeStart = new Date(endOfRange.setFullYear(endOfRange.getFullYear() - 5)); // Son 5 yıl
             grouping = '%Y'; // Yıl bazında
+            break;
+        case 'Maksimum':
+            // Veritabanında en eski tarihe göre başlangıç tarihini ayarla
+            const oldestData = await sequelize.query(
+                `SELECT MIN(time) as oldestDate FROM ${tableName} WHERE time IS NOT NULL`,
+                { type: Sequelize.QueryTypes.SELECT }
+            );
+            dateRangeStart = oldestData[0]?.oldestDate ? new Date(oldestData[0].oldestDate) : new Date(endOfRange.setFullYear(endOfRange.getFullYear() - 5));
+            grouping = '%Y'; // Maksimum aralığı yıllık bazda gruplandırıyoruz
             break;
         default:
             throw new Error('Geçersiz zaman aralığı');
@@ -67,26 +119,19 @@ const getSensorDataByInterval = async (tableName, interval) => {
         ORDER BY time ASC
     `;
 
-    return await sequelize.query(query, {
+
+    const data = await sequelize.query(query, {
         replacements: { start, end },
         type: Sequelize.QueryTypes.SELECT,
     });
-};
 
-// Tabloyu bulma fonksiyonu
-const findTable = async (code) => {
-    const tableName = code;
-
-    try {
-        // Tabloyu doğrula
-        const result = await sequelize.query(`SELECT * FROM ${tableName} LIMIT 1`, {
-            type: Sequelize.QueryTypes.SELECT,
-        });
-        return result; // Tabloyu döndür
-    } catch (error) {
-        console.error('Tablo bulunamadı veya sorgu hatası:', error);
-        return null;
+    // Eğer belirli aralıkta veri yoksa en son veriyi al
+    if (!data || data.length === 0) {
+        console.log("Seçilen aralıkta veri yok, en son veri gösteriliyor.");
+        return await getLatestData(tableName, selectedColumns ,grouping);
     }
+
+    return data;
 };
 
 // Ana veri alma fonksiyonu
