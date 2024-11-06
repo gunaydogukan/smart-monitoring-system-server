@@ -32,59 +32,75 @@ const findTable = async (code) => {
 };
 
 //veri yoksa, en son olan verileri getir
-const getLatestData  = async (tableName, selectedColumns,grouping) => {
+const getLatestData = async (tableName, selectedColumns, grouping, rangeInHours) => {
+    const endDateQuery = `SELECT MAX(time) as maxTime FROM ${tableName}`;
+    const endDateResult = await sequelize.query(endDateQuery, {
+        type: Sequelize.QueryTypes.SELECT,
+    });
 
+    const endDate = new Date(endDateResult[0].maxTime);
+    console.log(endDate);
+    // Başlangıç tarihi, `rangeInHours` kadar geriye gidilerek hesaplanır
+    const startDate = new Date(endDate.getTime() - rangeInHours * 60 * 60 * 1000);
+    console.log(startDate);
     const query = `
         SELECT ${selectedColumns.join(", ")}
         FROM ${tableName}
-        WHERE time = (SELECT MAX(time) FROM ${tableName})
+        WHERE time BETWEEN :startDate AND :endDate
         GROUP BY DATE_FORMAT(time, '${grouping}')
         ORDER BY time ASC
     `;
 
     return await sequelize.query(query, {
+        replacements: { startDate, endDate },
         type: Sequelize.QueryTypes.SELECT,
     });
-
 };
 
 // Zaman aralığına göre dinamik veri çekme
 const getSensorDataByInterval = async (tableName, interval) => {
-    let dateRangeStart, dateRangeEnd;
+    let dateRangeStart, dateRangeEnd, rangeInHours;
     const endOfRange = new Date();
     let grouping;
-    console.log(interval);
+    //console.log(interval);
     switch (interval) {
         case '1 Gün': // 5' dakikada bir
             dateRangeStart = new Date(endOfRange.getTime() - 24 * 60 * 60 * 1000); // Son 24 saat
             grouping = '%Y-%m-%d %H:%i'; // Dakika bazında
+            rangeInHours = 24;
             break;
         case '1 Hafta':
             dateRangeStart = new Date(endOfRange.getTime() - 7 * 24 * 60 * 60 * 1000); // Son 7 gün
             grouping = '%Y-%m-%d %H'; // Saat bazında
+            rangeInHours = 7 * 24;
             break;
         case '1 Ay':
             dateRangeStart = new Date(endOfRange.getTime() - 30 * 24 * 60 * 60 * 1000); // Son 30 gün
             dateRangeEnd = endOfRange; // Bugüne kadar olan son 30 gün
             grouping = '%Y-%m-%d'; // Gün bazında gruplama
+            rangeInHours = 30 * 24;
             break;
         case '3 Ay':
             dateRangeStart = new Date(endOfRange.getTime() - 3*30 * 24 * 60 * 60 * 1000); // Son 90 gün
             dateRangeEnd = endOfRange; // Bugüne kadar olan son 30 gün
             grouping = '%Y-%m-%d'; // Gün bazında gruplama
+            rangeInHours = 90 * 24;
             break;
         case '6 Ay':
             dateRangeStart = new Date(endOfRange.getTime() - 6*30 * 24 * 60 * 60 * 1000); // Son 120 gün
             dateRangeEnd = endOfRange; // Bugüne kadar olan son 30 gün
             grouping = '%Y-%m-%d'; // Gün bazında gruplama
+            rangeInHours = 180 * 24;
             break;
         case '1 Yıl ':
             dateRangeStart = new Date(endOfRange.setFullYear(endOfRange.getFullYear() - 1)); // Son 1 yıl
             grouping = '%Y-%m'; // Ay bazında
+            rangeInHours = 365 * 24;
             break;
         case '5 Yıllık':
             dateRangeStart = new Date(endOfRange.setFullYear(endOfRange.getFullYear() - 5)); // Son 5 yıl
             grouping = '%Y'; // Yıl bazında
+            rangeInHours = 5 * 365 * 24;
             break;
         case 'Maksimum':
             // Veritabanında en eski tarihe göre başlangıç tarihini ayarla
@@ -128,7 +144,7 @@ const getSensorDataByInterval = async (tableName, interval) => {
     // Eğer belirli aralıkta veri yoksa en son veriyi al
     if (!data || data.length === 0) {
         console.log("Seçilen aralıkta veri yok, en son veri gösteriliyor.");
-        return await getLatestData(tableName, selectedColumns ,grouping);
+        return await getLatestData(tableName, selectedColumns ,grouping,rangeInHours);
     }
 
     return data;
@@ -158,7 +174,7 @@ const getSensorData = async (req, res) => {
             return res.status(404).json({ message: 'Veri bulunamadı' });
         }
 
-        console.log(data);
+        //console.log(data);
         res.json(data);
     } catch (error) {
         console.error("Veri çekme hatası:", error);
