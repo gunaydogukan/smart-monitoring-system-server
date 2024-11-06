@@ -1,9 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 const sequelize = require("./config/database");
+const sensorCheckRoutes = require('./routes/sensorCheck/sensorCheckRouter');
 const userRoutes = require('./routes/userRoutes');
 const sensorRoutes = require('./routes/sensorsRoutes');
 const sensorDataRoutes = require('./routes/sensorDataRoutes');
+
+
 
 require('dotenv').config();
 
@@ -18,6 +21,7 @@ app.use(express.json());
 app.use('/api', userRoutes);
 app.use('/api', sensorRoutes);
 app.use('/api', sensorDataRoutes);
+app.use('/api/sensors', sensorCheckRoutes);
 
 
 sequelize.authenticate()
