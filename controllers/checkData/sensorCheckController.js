@@ -2,7 +2,7 @@ const SensorCheck = require('../../models/checkData/sensorCheck');
 
 // Checkbox verilerini ekleme ve güncelleme fonksiyonu
 const addCheckBoxChancehing = async (req, res) => {
-    const { name, sagUstNem, sagUstSicaklik, sagAltNem, sagAltSicaklik, solAltNem, solAltSicaklik, yagis, mesafe, turkcell, vodafone, turkTelekom } = req.body;
+    const { name, sagUstNem, sagAltNem, solAltNem, yagis, mesafe, turkcell, vodafone, turkTelekom } = req.body;
 
     try {
         let sensor = await SensorCheck.findOne({ where: { name } });
@@ -10,11 +10,8 @@ const addCheckBoxChancehing = async (req, res) => {
         if (sensor) {
             await sensor.update({
                 sagUstNem,
-                sagUstSicaklik,
                 sagAltNem,
-                sagAltSicaklik,
                 solAltNem,
-                solAltSicaklik,
                 yagis,
                 mesafe,
                 turkcell,
@@ -25,11 +22,8 @@ const addCheckBoxChancehing = async (req, res) => {
             sensor = await SensorCheck.create({
                 name,
                 sagUstNem,
-                sagUstSicaklik,
                 sagAltNem,
-                sagAltSicaklik,
                 solAltNem,
-                solAltSicaklik,
                 yagis,
                 mesafe,
                 turkcell,
@@ -76,6 +70,5 @@ const getSensorByName = async (req, res) => {
         res.status(500).json({ message: 'Bir hata oluştu.' });
     }
 };
-
 
 module.exports = { addCheckBoxChancehing, getAllSensors, getSensorByName };

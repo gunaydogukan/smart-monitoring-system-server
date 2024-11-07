@@ -1,3 +1,14 @@
+//GET
+
+http://localhost:5000/api/sensors/all-sensors
+http://localhost:5000/api/companiesCount
+http://localhost:5000/api/user-sensors
+http://localhost:5000/api/type
+
+
+
+//POST
+
 //http://localhost:5000/api/sensors
 {
     "datacode": "D001",
