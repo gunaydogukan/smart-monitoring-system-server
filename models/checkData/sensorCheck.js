@@ -29,27 +29,12 @@ const SensorCheck = sequelize.define('sensor_check', {
         allowNull: true,
         defaultValue: false,
     },
-    sagUstSicaklik: {
-        type: DataTypes.BOOLEAN,
-        allowNull: true,
-        defaultValue: false,
-    },
     sagAltNem: {
         type: DataTypes.BOOLEAN,
         allowNull: true,
         defaultValue: false,
     },
-    sagAltSicaklik: {
-        type: DataTypes.BOOLEAN,
-        allowNull: true,
-        defaultValue: false,
-    },
     solAltNem: {
-        type: DataTypes.BOOLEAN,
-        allowNull: true,
-        defaultValue: false,
-    },
-    solAltSicaklik: {
         type: DataTypes.BOOLEAN,
         allowNull: true,
         defaultValue: false,
