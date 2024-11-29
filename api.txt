@@ -4,10 +4,27 @@ http://localhost:5000/api/sensors/all-sensors
 http://localhost:5000/api/companiesCount
 http://localhost:5000/api/user-sensors
 http://localhost:5000/api/type
-
+http://localhost:5000/log/data-time-check
 
 
 //POST
+http://localhost:5000/api/sensor-data
+{
+    "dataCode": "l001",
+    "data": {
+        "sagUstNem": 60.6,
+        "sagUstSıcaklık": 22.3,
+        "sagAltNem": 47.8,
+        "sagAltSıcaklık": 21.9,
+        "solAltNem": 49.2,
+        "solAltSıcaklık": 23.4
+    }
+}
+http://localhost:5000/log/IP-controll
+{
+  "ipAdress": "192.168.1.105",
+  "datacode": "DENEME2"
+}
 
 //http://localhost:5000/api/sensors
 {

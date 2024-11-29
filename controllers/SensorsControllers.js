@@ -4,6 +4,7 @@ const SensorOwner = require('../models/sensors/sensorOwner');
 const Companies = require('../models/users/Companies');
 const Users = require('../models/users/User');
 const { SensorData } = require("../models/sensors/SensorsData"); //sensor data table'a eklemek için
+const IPLogger = require("../models/logs/IPLog");  //sensör eklendiğinde sensor dataCodu ıpLog table'ına atılır ve ilk ip null olarak gider
 const { getAllSensors,getSensorIdsByOwner,getSensorsByIds} = require('../services/sensorServices');
 
 const addSensors = async (req, res) => {
@@ -21,13 +22,14 @@ const addSensors = async (req, res) => {
         console.log('Gelen Veri:', req.body); // Burada datanın nasıl geldiğine dikkat edin.
 
         const { datacode, name, lat, lng, def, type_id, village_id,company_code,manager_id } = req.body;
+
         // Gerekli alanlar doldurulmuş mu kontrol et
         if (!datacode || !name || !lat || !lng || !type_id || !village_id || !company_code || !manager_id) {
             return res.status(400).json({ message: 'Lütfen tüm gerekli alanları doldurun.' });
         }
 
         let newSensor;
-        // Sensörün daha önce eklenip eklenmediğini kontrol et
+        // Sensörün daha önce eklenip eklenmediğini kontrol etme alanı
         const existingSensor = await Sensors.findOne({ where: { datacode } });
         if (existingSensor) {
             newSensor=existingSensor;
@@ -45,12 +47,20 @@ const addSensors = async (req, res) => {
             });
         }
 
+        //sensör verisi ekleme alanı
         const newSensorData = await SensorData(newSensor);
         console.log(newSensorData);
 
+        //sensör sahibi ekleme alanı
         const sensorId = newSensor.id
-
         const ownerResponse = await addOwner(manager_id, sensorId);
+
+        // IP_loggers tablosuna veri ekleme alanı
+        const newIPLog = await IPLogger.create({
+            datacode: datacode,
+            IP_Adresses: null,        // Başlangıçta IP adresi null olacak
+        });
+        console.log('Yeni IP Log: ', newIPLog);
 
         // Başarılı yanıt döndürme
         res.status(201).json({

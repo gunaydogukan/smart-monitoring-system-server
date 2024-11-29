@@ -1,4 +1,5 @@
 const sequelize = require("../config/sensorDatadatabase");
+const LastSensorData = require('../models/logs/LastSensorData');
 const Sequelize = require("sequelize");
 const { Op } = require('sequelize');
 
@@ -20,13 +21,13 @@ const findTable = async (code) => {
     const tableName = code;
 
     try {
-        // Tabloyu doğrula
+
         const result = await sequelize.query(`SELECT * FROM ${tableName} LIMIT 1`, {
             type: Sequelize.QueryTypes.SELECT,
         });
         return result; // Tabloyu döndür
     } catch (error) {
-        console.error('Tablo bulunamadı veya sorgu hatası:', error);
+        console.error('FindTable Metotu', error);
         return null;
     }
 };
@@ -182,4 +183,71 @@ const getSensorData = async (req, res) => {
     }
 };
 
-module.exports = { getSensorData };
+//fake veri ekleme ve dataLog tutma...
+const addSensorData = async (req, res) => {
+    const { dataCode, data } = req.body;
+
+    if (!dataCode || !data) {
+        return res.status(400).json({ error: "dataCode ve data gereklidir." });
+    }
+
+    const code = dataCode.toLowerCase();
+    try {
+        const tableName = code;
+
+        const tableColumns = await getTableColumns(tableName);
+
+        if (!tableColumns || tableColumns.length === 0) {
+            throw new Error(`Tablo sütunları alınamadı: ${tableName}`);
+        }
+
+        //gelen data hedef tabloda bulunan sütünlara karşılık geliyor mu , veri bütünlüğünü korur hataları önler
+        const validColumns = Object.keys(data).filter(key => tableColumns.includes(key));
+        if (validColumns.length === 0) {
+            throw new Error("Geçerli sütunlar bulunamadı.");
+        }
+
+        // Kolon adları ve değerleri , bu işlem veri güvenliğini sağlamak için direkt sql sorugsu içini verileri yazmamak için
+        const columnNames = validColumns.join(", ");
+        const placeholders = validColumns.map(() => "?").join(", ");
+        const values = validColumns.map(key => data[key]);
+        const currentTime = new Date();
+        values.push(currentTime);
+
+        const insertQuery = `
+            INSERT INTO ${tableName} (${columnNames}, time)
+            VALUES (${placeholders}, ?)
+        `;
+        console.log("SQL Sorgusu:", insertQuery);
+
+        await sequelize.query(insertQuery, {
+            replacements: values, //artık soru işareti yerine vlaues geçer güvenlik sağlandı
+            type: Sequelize.QueryTypes.INSERT,
+        });
+
+        console.log(`${tableName} tablosuna veri eklendi.`);
+
+        // `latest_sensor_data` tablosunu güncelle
+        const [latestEntry, created] = await LastSensorData.findOrCreate({
+            where: { dataCode },
+            defaults: {
+                dataCode,
+                lastUpdatedTime: currentTime,
+            },
+        });
+
+        if (!created) {
+            latestEntry.lastUpdatedTime = currentTime;
+            await latestEntry.save();
+        }
+
+        console.log(`latest_sensor_data tablosu güncellendi: ${dataCode}`);
+        res.status(201).json({ message: "Veri eklendi ve latest_sensor_data güncellendi." });
+    } catch (error) {
+        console.error("Veri ekleme hatası:", error.message);
+        res.status(500).json({ error: "Veri ekleme hatası.", detail: error.message });
+    }
+};
+
+
+module.exports = { getSensorData, addSensorData };
