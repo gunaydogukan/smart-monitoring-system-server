@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const userController = require("../controllers/UserController");
 const { authenticateToken, authorizeRole } = require("../middleware/BearerTokenMiddleware");
+const  UpdateUserController  = require('../controllers/UpdateUserController');
 
 // Register endpoint: Sadece administrator rolüne sahip kullanıcılar ekleyebilir
 router.post('/register', authenticateToken, authorizeRole(['administrator','manager']), userController.register);
@@ -43,6 +44,9 @@ router.get('/personals',authenticateToken,userController.getPersonalsByCompany);
 
 //Kurumlar'ın gösterildiği bölümde , kullanıcı sayıları ve sensör sayıları'da gözükür.
 router.get('/companiesCount',authenticateToken,userController.getUserCount)
-
+router.put('/update', authenticateToken, UpdateUserController.updateUser);
+router.put('/modifyuser', authenticateToken, UpdateUserController.modifyUserDetails);
+router.patch('/:id/deactivate', authenticateToken, UpdateUserController.deactivateUser);
+router.patch('/:id/activate', authenticateToken, UpdateUserController.activateUser);
 
 module.exports = router;

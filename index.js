@@ -7,7 +7,6 @@ const sensorRoutes = require('./routes/sensorsRoutes');
 const sensorDataRoutes = require('./routes/sensorDataRoutes');
 
 
-
 require('dotenv').config();
 
 const app = express();
