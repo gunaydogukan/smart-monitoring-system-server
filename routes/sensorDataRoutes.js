@@ -7,4 +7,7 @@ const { authenticateToken } = require("../middleware/BearerTokenMiddleware");
 //sensör verilerinin tümünü alma (şimdilik);
 router.get('/sensor-data',authenticateToken,sensorsDataController.getSensorData);
 
+// Sensör verisi eklemek için endpoint
+router.post('/sensor-data',authenticateToken,sensorsDataController.addSensorData);
+
 module.exports = router;
