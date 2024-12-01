@@ -106,7 +106,8 @@ const addOwner = async (managerId, sensorId) => {
     }
 };
 
-const addTypes = async (req,res) =>{
+//Burada yeni sensör tipi ekleme işlemi yapılır
+const addNewType = async (req,res) =>{
 
     try{
         const user = req.user;
@@ -114,15 +115,40 @@ const addTypes = async (req,res) =>{
             return res.status(400).json({ message: 'Bu işlemi yapmaya yetkiniz yoktur. Lütfen yetkili birisine ulaşınız' });
         } //type eklemeyi sadece admin
 
-        const {type} = req.body;
+        const { type, dataCount, dataNames } = req.body;
+        const dataCountInt = parseInt(dataCount); //dataCount sayısını int çeviriyoruz
 
         const existingType = await Type.findOne({ where: { type } });
         if (existingType) {
             return res.status(400).json({ error: "Bu tip zaten kayıtlı." });
         }
 
+        if(!dataCountInt || dataCountInt<=0){
+            return res.status(400).json({error:"Geçerli veri sayısı girmediniz. addNewtype metotu"});
+        }
+
+        console.log("datanamesleng",dataNames.length)
+        if (!Array.isArray(dataNames) || dataNames.length !== dataCountInt) {
+            return res.status(400).json({
+                error: "Veri sayısı ile veri isimleri aynı sayıda olmalı : addnewType metotu"
+            });
+        }
+
+        // Column isimlerinde aynı olan varsa hata döndür
+        const uniqueDataNames = new Set(dataNames); //set benzersizliği kontrol eder
+        if (uniqueDataNames.size !== dataNames.length) {
+            return res.status(400).json({
+                error: "Veri isimlerinden bazıları tekrar ediyor. Lütfen benzersiz veri isimleri girin."
+            });
+        }
+
+        //veri tabanı için json formatına çeviriyoruz
+        const dataNamesString = JSON.stringify(dataNames);
+
         const newType = await Type.create({
-            type
+            type,
+            dataCount:dataCountInt,
+            dataNames: dataNamesString,
             }
         );
 
@@ -252,5 +278,5 @@ const getUserOwnedSensors = async (userId) => {
     }
 };
 
-module.exports = { addTypes, addSensors, getTypes,getUserSensors };
+module.exports = { addNewType, addSensors, getTypes,getUserSensors };
 

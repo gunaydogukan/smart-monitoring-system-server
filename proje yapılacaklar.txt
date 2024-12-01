@@ -1,25 +1,18 @@
 
 //İLERLEYEN ZAMANLARDA YAPILACAKLAR
 
-
 Sensör gösteriminde olan pinlerin düzeni
-
-Anasayfa düzeni (Admin-Manager-Personel ayrımı olarak...)
-
-Kurumlar page'ine kurumlara tıklandığında o kuruma ait olan sensör sayısı , manaager sayısı , personel sayısı gibi bilgiler gözükebilir.. (sadece admin)
 +Admin ise kendi kurumunda olan toplam sensör toplam personel ve toplam admin sayısını göreiblir (değişebilir , sadece admin)
-
 sensorcontroller' add sensor 'de olan metotta...
 const newSensorData = await SensorData(newSensor); //Bu tablonun var olup olmadığı kontrolü yapılabilir // yoksa ekliyo varsa zaten eklemiyo ...
 
+IP kontrolü,Sensor data zaman kontrolü yapıldı fakat canlı veriler gelince düzenlenecek
+Error message page
+SENSÖR GRAFİKLERİ YAPILDI FAKAT DAHA DÜZENLENMELİ FİLTRELEME İŞLEMİ DAHA DETAYLANDIRILMALI
+
 //ÖNCELİKLİ YAPILACAKLAR
 
-Update , Delete(active,inactive) , loglama yapılacak,
-IP kontrolü,
-Error message page
 
-
-SENSÖR GRAFİKLERİ YAPILDI FAKAT DAHA DÜZENLENMELİ FİLTRELEME İŞLEMİ DAHA DETAYLANDIRILMALI
 
 
 
@@ -37,4 +30,6 @@ Admin - personel eklerken => personeli hangi managere tanımlayacağını seçme
 sensordata table için yeni database eklendi sensorData table' lar yeni olan database içerisinde tutuluyor
 60 sensör ve 60 data table eklendi
 SensorChek yeni proje dosyası olarak yapıldı(opsyonel-evrimhoca isteği)
-
+Kurumlar page'ine kurumlara tıklandığında o kuruma ait olan sensör sayısı , manaager sayısı , personel sayısı gibi bilgiler gözükebilir.. (sadece admin)
+Update , Delete(active,inactive) , loglama yapılacak,
+Sensör Loglama
