@@ -4,7 +4,7 @@ const sensorsController = require("../controllers/SensorsControllers");
 const { authenticateToken } = require("../middleware/BearerTokenMiddleware");
 
 // Sensör ekleme ve tür ekleme
-router.post('/type', authenticateToken, sensorsController.addTypes);
+router.post('/add-new-type', authenticateToken, sensorsController.addNewType);
 
 router.post('/sensors', authenticateToken, sensorsController.addSensors);
 

@@ -13,6 +13,7 @@ const getTableColumns = async (tableName) => {
             type: Sequelize.QueryTypes.SELECT,
         }
     );
+    console.log("Columns",columns);
     return columns.map(col => col.COLUMN_NAME); //sadece sütün adları döndürür
 };
 
@@ -66,6 +67,7 @@ const getSensorDataByInterval = async (tableName, interval) => {
     //console.log(interval);
     switch (interval) {
         case '1 Gün': // 5' dakikada bir
+            console.log("Bu bgünün tarihi - 24 saat ",endOfRange.getTime() - 24 * 60 * 60 * 1000)
             dateRangeStart = new Date(endOfRange.getTime() - 24 * 60 * 60 * 1000); // Son 24 saat
             grouping = '%Y-%m-%d %H:%i'; // Dakika bazında
             rangeInHours = 24;
@@ -164,19 +166,22 @@ const getSensorData = async (req, res) => {
     const code = dataCode.toLowerCase();
     try {
         const tableExists = await findTable(code);
-
         if (!tableExists) {
             return res.status(404).json({ message: 'Tablo bulunamadı' });
         }
 
         const data = await getSensorDataByInterval(code, interval);
-
         if (!data || data.length === 0) {
             return res.status(404).json({ message: 'Veri bulunamadı' });
         }
 
         //console.log(data);
-        res.json(data);
+        res.json({
+            message: "Veri başarıyla alındı",
+            data: data, // Dönen veriler
+            count: data.length, // Gelen veri sayısı
+        });
+
     } catch (error) {
         console.error("Veri çekme hatası:", error);
         res.status(500).json({ error: "Veri çekme hatası" });

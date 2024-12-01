@@ -8,6 +8,15 @@ http://localhost:5000/log/data-time-check
 
 
 //POST
+
+
+http://localhost:5000/api/add-new-type
+{
+  "type": "Azot Sensörü",
+  "dataCount": 2,
+  "dataNames": ["nitrogenLevel", "sensorTemperature"]
+}
+
 http://localhost:5000/api/sensor-data
 {
     "dataCode": "l001",

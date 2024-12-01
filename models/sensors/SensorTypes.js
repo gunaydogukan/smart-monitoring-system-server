@@ -13,6 +13,15 @@ const Type = sequelize.define("sensors_types_tables", {
             allowNull: false,
             unique:true,
         },
+        dataCount: {
+            type: Sequelize.INTEGER,
+            allowNull: false,
+            defaultValue: 0,
+        },
+        dataNames: {
+            type: Sequelize.TEXT,
+            allowNull: false,
+        },
     }, { timestamps: true });
 
 module.exports = Type;
