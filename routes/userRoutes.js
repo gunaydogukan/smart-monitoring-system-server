@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const userController = require("../controllers/UserController");
 const { authenticateToken, authorizeRole } = require("../middleware/BearerTokenMiddleware");
-const  UpdateUserController  = require('../controllers/UpdateUserController');
+const  UpdateUserController  = require('../controllers/logs/UpdateUserController');
 
 // Register endpoint: Sadece administrator rolüne sahip kullanıcılar ekleyebilir
 router.post('/register', authenticateToken, authorizeRole(['administrator','manager']), userController.register);
