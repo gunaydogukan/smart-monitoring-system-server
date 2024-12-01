@@ -544,63 +544,69 @@ const getPersonalsByCompany = async (req, res) => {
     }
 };
 
-const getUserCount = async (req,res) =>{
-    const {role} = req.user; //giren kişinin bilgilerini alınır
+const getUserCount = async (req, res) => {
+    const { role } = req.user; // Giriş yapan kişinin bilgileri alınır
     const companies = await getAllCompanies();
 
-    //bu işlevi sadece admin görebilir
-    if(role != 'administrator'){
-        return "";
+    // Bu işlevi sadece admin görebilir
+    if (role !== 'administrator') {
+        return res.status(403).json({ message: 'Yetkisiz erişim' });
     }
 
-    //kullanıcıları alır
+    // Kullanıcıları alır
     const users = await User.findAll({
-        attributes : ['companyCode' , 'role'],
+        attributes: ['companyCode', 'role'],
     });
 
     console.log(companies);
 
-    //gruplama işlemi burada yapılıyor
-    //reduce = bir diziyi belirli kurala göre tek değer veya karmaşık bir yapıya dönüştürür
-    //bu fonk sırasıyla bir işlem yapar acc (accumulator) güncelleyerek son sonuç üretir
+    // Gruplama işlemi burada yapılıyor
     const groupedUserCounts = users.reduce((acc, user) => {
-        const {companyCode,role} = user;
-        console.log("acc değeri = ",acc);
-        console.log("userlar = ",user);
-        console.log("companyCode = ",companyCode);
-        console.log("role = ",role);
+        const { companyCode, role } = user;
 
-        //burada bir yapı oluşturduk
-        if((role !== 'administrator' && companyCode!==null) &&!acc[companyCode]){
+        console.log("acc değeri = ", acc);
+        console.log("userlar = ", user);
+        console.log("companyCode = ", companyCode);
+        console.log("role = ", role);
+
+        // companyCode null ise bu kullanıcıyı dahil etme
+        if (companyCode === null || role === 'administrator') {
+            return acc;
+        }
+
+        // acc içinde companyCode için bir yapı oluşturulmamışsa oluştur
+        if (!acc[companyCode]) {
             acc[companyCode] = { total: 0, managerCount: 0, personalCount: 0 };
         }
 
-        if((role !== 'administrator' && companyCode!==null)){
-            acc[companyCode].total +=1; //yapıdaki totali bir arttır
+        // Kullanıcı rolüne göre sayacı artır
+        acc[companyCode].total += 1;
+
+        if (role === "manager") {
+            acc[companyCode].managerCount += 1;
         }
 
-        if(role === "manager"){
-            acc[companyCode].managerCount+=1;
+        if (role === "personal") {
+            acc[companyCode].personalCount += 1;
         }
 
-        if(role === "personal"){
-            acc[companyCode].personalCount+=1;
+        return acc;
+    }, {});
 
-        }
-        return acc; //sonucu döndür
-    },{});
-    console.log("klhkljhjklhlkjhlkhk",groupedUserCounts);
-    //companies ' lere göre sonuçları göster
-    const result = companies.map(company =>{
+    console.log("Gruplama sonuçları: ", groupedUserCounts);
+
+    // Companies'lere göre sonuçları oluştur
+    const result = companies.map(company => {
         const companyCode = company.dataValues.code; // 'code' alanı 'companyCode' olarak kullanılıyor
-        //eğer listede eşleşiyorsa yaz   //eşleşmiyorsa 0
+        // Eşleşen kullanıcı verilerini al, yoksa varsayılan değerler kullan
         const userCounts = groupedUserCounts[companyCode] || { total: 0, managerCount: 0, personalCount: 0 };
-        console.log("userCount = ",userCounts);
+        console.log("userCounts = ", userCounts);
+
         return {
-            id:company.dataValues.id,
-            code:companyCode,
+            id: company.dataValues.id,
+            code: companyCode,
             name: company.dataValues.name, // Şirket ismi için 'name' alanı kullanılıyor
-            plate:company.dataValues.plate,
+            plate: company.dataValues.plate,
             total: userCounts.total,
             mcount: userCounts.managerCount,
             pcount: userCounts.personalCount

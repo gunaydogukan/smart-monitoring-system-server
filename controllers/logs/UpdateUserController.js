@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
-const User = require('../models/users/User'); // User modeli
-const UserLog = require('../models/logging/userLog'); // Log modeli
+const User = require('../../models/users/User'); // User modeli
+const UserLog = require('../../models/logging/userLog'); // Log modeli
 
 const updateUser = async (req, res) => {
     const { id } = req.user; // Kimlik doğrulama sonrası gelen kullanıcı ID
