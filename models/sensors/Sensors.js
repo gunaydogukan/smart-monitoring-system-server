@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require("../../config/database"); // Sequelize bağlantını buraya eklemelisin
+const sequelize = require("../../config/database");
 
 const Sensors = sequelize.define('sensors', {
     id: {
@@ -10,7 +10,7 @@ const Sensors = sequelize.define('sensors', {
     datacode: {
         type: DataTypes.STRING,
         allowNull: false,
-        unique:true,
+        unique: true,
     },
     name: {
         type: DataTypes.STRING,
@@ -43,10 +43,15 @@ const Sensors = sequelize.define('sensors', {
     village_id: {
         type: DataTypes.INTEGER,
         references: {
-            model: 'villages', // Referans alınacak tablo adı (örneğin, villages tablosu)
+            model: 'villages', // Referans alınacak tablo adı
             key: 'id',
         },
         allowNull: false,
+    },
+    isActive: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true, // Varsayılan olarak aktif
     },
 }, {
     timestamps: true, // createdAt ve updatedAt alanlarını otomatik olarak ekler

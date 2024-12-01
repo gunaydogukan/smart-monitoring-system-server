@@ -33,7 +33,7 @@ const checkSensorTime = async (datacode) =>{
         console.log("sensör bulundu : "+sensorDataTable);
 
         const lastSensorData = await sensorDataTable.findOne({
-            order: [['time','DESC']],
+            order: [['time','DESC']], // tersten sıralayıp en sonu alıyor
             limit:1
         });
 

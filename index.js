@@ -7,7 +7,7 @@ const sensorRoutes = require('./routes/sensorsRoutes');
 const sensorDataRoutes = require('./routes/sensorDataRoutes');
 const IPlogsRoutes = require('./routes/logs/IpLogRoutes');
 const SensorDatalogsRoutes = require('./routes/logs/SensorDataLogRoutes');
-
+const sensorLogsRoutes = require('./routes/logs/sensorLogsRoutes');
 require('dotenv').config();
 
 const app = express();
@@ -23,6 +23,7 @@ app.use('/api', sensorDataRoutes);
 app.use('/api/sensors', sensorCheckRoutes);
 app.use('/log', IPlogsRoutes);
 app.use('/log', SensorDatalogsRoutes);
+app.use('/api/sensor-logs', sensorLogsRoutes);
 
 sequelize
     //.sync({ alter: true })
