@@ -1,6 +1,11 @@
 
 //İLERLEYEN ZAMANLARDA YAPILACAKLAR
 
+raporlama (pdf excel)
+kullanıcı fotoğraf ekleme
+tr-eng dil desteği
+
+
 Sensör gösteriminde olan pinlerin düzeni
 +Admin ise kendi kurumunda olan toplam sensör toplam personel ve toplam admin sayısını göreiblir (değişebilir , sadece admin)
 sensorcontroller' add sensor 'de olan metotta...
@@ -12,9 +17,11 @@ SENSÖR GRAFİKLERİ YAPILDI FAKAT DAHA DÜZENLENMELİ FİLTRELEME İŞLEMİ DAH
 
 //ÖNCELİKLİ YAPILACAKLAR
 
+siyah beyaz mod kaldırılacak
 
-
-
+KULLANICI AKTİF PASİF OLAYI
+SENSÖR PASİF
+LOG TABLE (FRONT İÇİN)
 
 
 //YAPILAN :
