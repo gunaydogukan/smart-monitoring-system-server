@@ -81,13 +81,20 @@ const login = async (req, res) => {
             return res.status(400).json({ error: "Email ve şifre gerekli." });
         }
 
-        console.log("Body:", req.body);
+        console.log("Gelen body:", req.body);
 
         // Kullanıcıyı email ile bul
         const user = await User.findOne({ where: { email } });
         console.log("Kullanıcı:", user);
 
-        if (!user) {
+        if (!user || !user.isActive) {
+
+            if(!user.isActive){
+                console.log(user.isActive);
+                console.log("deneme");
+                return res.status(400).json({ error: "Kullanıcı pasif durumda. Lütfen admin ile görüşünüz." });
+            }
+
             return res.status(400).json({ error: "Email veya şifre hatalı." });
         }
 
@@ -110,6 +117,7 @@ const login = async (req, res) => {
                 id: user.id,
                 email: user.email,
                 role: user.role,
+                isActive:user.isActive,
             },
         });
     } catch (error) {
