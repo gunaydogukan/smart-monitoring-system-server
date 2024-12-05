@@ -49,4 +49,11 @@ router.put('/modifyuser', authenticateToken, UpdateUserController.modifyUserDeta
 router.patch('/:id/deactivate', authenticateToken, UpdateUserController.deactivateUser);
 router.patch('/:id/activate', authenticateToken, UpdateUserController.activateUser);
 
+router.get('/company/:companyCode/undefined-users-and-managers', authenticateToken,
+    UpdateUserController.getUndefinedUsersAndActiveManagers);
+
+// Personelleri yeni bir manager'e atama
+router.post('/assign-personals', authenticateToken,
+    UpdateUserController.assignPersonalsToManager
+);
 module.exports = router;
