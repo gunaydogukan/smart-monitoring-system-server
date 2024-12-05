@@ -3,7 +3,7 @@ node_modules/
 .env
 /config/checkData/checkDatabase.js
 /config/logDatabase.js
-/config/database.js
+
 /config/sensorDatadatabase.js
 /config/logDatabase.js
 package-lock.json
