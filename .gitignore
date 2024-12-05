@@ -4,5 +4,6 @@ node_modules/
 /config/checkData/checkDatabase.js
 /config/database.js
 /config/sensorDatadatabase.js
+/config/logDatabase.js
 package-lock.json
 package.json
