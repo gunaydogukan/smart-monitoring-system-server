@@ -1,4 +1,6 @@
 const IpLog = require('../../models/logs/IPLog'); // ip log modeli
+const sensorIP = require('../../config/FurkanHocaDb/sensorIP');
+const { QueryTypes } = require('sequelize');
 
 const updateIpLog = async (req, res) => {
     try {
@@ -52,6 +54,57 @@ const updateIpLog = async (req, res) => {
     }
 };
 
+//Furkan Hocanın Database' si ile yapılıyor
+const getIpLogs = async (req, res) => {
+    try {
+        const { datacodes } = req.query;
+
+        // Varsayılan sorgu
+        let query = `SELECT * FROM sensorIpList`;
+        let replacements = [];
+
+        if (datacodes) {
+            // datacodes değerlerini işle ve sorguyu güncelle
+            const dataCodesArray = datacodes.split(',').map(code => code.trim().toLowerCase());
+            const placeholders = dataCodesArray.map(() => '?').join(',');
+            query = `SELECT * FROM sensorIpList WHERE LOWER(sensorName) IN (${placeholders})`;
+            replacements = dataCodesArray;
+        }
+
+        // Verileri sorgula
+        const results = await sensorIP.query(query, {
+            replacements,
+            type: QueryTypes.SELECT,
+        });
+
+        // Query'den gelen sonuçları kontrol et
+        const ipLogs = results || [];
+        if (!Array.isArray(ipLogs) || ipLogs.length === 0) {
+            return res.status(404).json({
+                message: 'Hiçbir IP Logu bulunamadı.',
+                data: [],
+            });
+        }
+
+        console.log("Fetched IP Logs:", ipLogs);
+
+        // Başarılı yanıt döndür
+        return res.status(200).json({
+            message: 'IP Logları başarıyla alındı.',
+            data: ipLogs,
+        });
+    } catch (err) {
+        console.error('Hata: IPLOGSCONTROLLER GETIPLOGS', err);
+
+        return res.status(500).json({
+            message: 'IP Logları alınırken bir hata oluştu.',
+            error: err.message || err,
+        });
+    }
+};
+
+//Göstermelik olan kendi veri tabanımız
+/*
 const getIpLogs = async (req, res) => {
     try {
         const { datacodes } = req.query;
@@ -75,5 +128,6 @@ const getIpLogs = async (req, res) => {
         return res.status(500).json({ message: 'IP Logları alınırken bir hata oluştu.', error: err });
     }
 };
+*/
 
 module.exports = { updateIpLog,getIpLogs };

@@ -6,4 +6,6 @@ const { authenticateToken } = require('../../middleware/BearerTokenMiddleware');
 // Sensör güncelleme ve loglama
 router.put('/update/:id', authenticateToken, updateSensorLogsController.updateSensor);
 
+router.put('/update/isActiveForIP/:id/:isActive',authenticateToken,updateSensorLogsController.isActiveForIP);
+
 module.exports = router;

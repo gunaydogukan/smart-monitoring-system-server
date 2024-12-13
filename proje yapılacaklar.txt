@@ -1,29 +1,28 @@
 
-//İLERLEYEN ZAMANLARDA YAPILACAKLAR
+//YAPILACAKLAR
 
+GRAFİK VERİSİ DÜZENİ(VERİ DOĞRU MU GELİYOR YANLIŞ MI GELİYOR KONTROLÜ ANLAŞILMIYO DİKKATLİ BAK)
+Yağmur sensör verisi düzenlenecek
+Veri olmayan grafiklerde hata yerine veri yok yazılacak
+Sorgu işlemi daha verimli çalışacak
+Ana sayfa düzeni
+PERSONEL ÇIKART
+Web soket
+LOG TABLE (FRONT İÇİN)
+Kurum kontrol sensör eklendikçe oranın db nede eklenecek...
+
++manager ise kendi kurumunda olan toplam sensör toplam personel ve toplam admin sayısını göreiblir
+Sensör gösteriminde olan pinlerin düzeni
+siyah beyaz mod kaldırılacak
 raporlama (pdf excel)
 kullanıcı fotoğraf ekleme
 tr-eng dil desteği
-
-
-Sensör gösteriminde olan pinlerin düzeni
-+Admin ise kendi kurumunda olan toplam sensör toplam personel ve toplam admin sayısını göreiblir (değişebilir , sadece admin)
+Sensör grafiklerine göz at değişebilir düzenlenebilri daha detaylandırılabilir
+Error message page
 sensorcontroller' add sensor 'de olan metotta...
 const newSensorData = await SensorData(newSensor); //Bu tablonun var olup olmadığı kontrolü yapılabilir // yoksa ekliyo varsa zaten eklemiyo ...
 
-IP kontrolü,Sensor data zaman kontrolü yapıldı fakat canlı veriler gelince düzenlenecek
-Error message page
-SENSÖR GRAFİKLERİ YAPILDI FAKAT DAHA DÜZENLENMELİ FİLTRELEME İŞLEMİ DAHA DETAYLANDIRILMALI
-
-//ÖNCELİKLİ YAPILACAKLAR
-
-siyah beyaz mod kaldırılacak
-
-KULLANICI AKTİF PASİF OLAYI
-SENSÖR PASİF
-LOG TABLE (FRONT İÇİN)
-
-
+------------------------------------------------------------------------------------------------------------------------------------------------------
 //YAPILAN :
 
 sensorowner table kurulacak = id , sensorowner , sensorİd
@@ -40,3 +39,9 @@ SensorChek yeni proje dosyası olarak yapıldı(opsyonel-evrimhoca isteği)
 Kurumlar page'ine kurumlara tıklandığında o kuruma ait olan sensör sayısı , manaager sayısı , personel sayısı gibi bilgiler gözükebilir.. (sadece admin)
 Update , Delete(active,inactive) , loglama yapılacak,
 Sensör Loglama
+İP RENK DÜZENİ
+PERSONEL TANIMLAMA VS LOG
+KULLANICI AKTİF PASİF OLAYI
+SENSÖR PASİF
+IP kontrolü,Sensor data zaman kontrolü yapıldı
+Hatalı veriler gösterilmeyecek ve ortalama hesaplamasından ayrı tutulacak...
