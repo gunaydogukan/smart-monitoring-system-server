@@ -1,6 +1,8 @@
 
 //YAPILACAKLAR
 
+Sensör verisinin son verdiği zamanı toplu almak içni soket gerekebilir veya daha verimli bir şey yapılabilir (Maliyet çok)
+
 GRAFİK VERİSİ DÜZENİ(VERİ DOĞRU MU GELİYOR YANLIŞ MI GELİYOR KONTROLÜ ANLAŞILMIYO DİKKATLİ BAK)
 Yağmur sensör verisi düzenlenecek
 Veri olmayan grafiklerde hata yerine veri yok yazılacak
