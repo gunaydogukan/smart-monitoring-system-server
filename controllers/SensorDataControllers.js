@@ -35,7 +35,6 @@ const findTable = async (code) => {
     }
 };
 //veri yoksa, en son olan verileri getir
-// Veri yoksa, en son olan verileri getir
 const getLatestData = async (tableName, selectedColumns, grouping, rangeInHours) => {
     const endDateQuery = `SELECT MAX(time) as maxTime FROM \`${tableName}\``;  // Tablo adı güvenli şekilde yerleştirilir
     const endDateResult = await sensorData.query(endDateQuery, {
@@ -129,6 +128,38 @@ const getSensorDataByInterval = async (tableName, interval) => {
         replacements: { start, end },
         type: Sequelize.QueryTypes.SELECT,
     });
+
+/*    silenecek data time işlemi bitince
+    //Sensörden gelen en son veri alınıp sensorDataLog table'ına atılır, En son veri ne zaman geldi kontrolü
+    if(interval ==="1 Gün"){
+        console.log("veriler = ",data);
+        const latestData = [...data]
+            .sort((a, b) => new Date(b.time) - new Date(a.time))[0];
+        console.log("Son veri =", latestData);
+
+        //son veri alınamazsa
+        if (!latestData || !latestData.time) {
+            console.error("intervalFonk. lastData işlemi ");
+            return;
+        }
+
+        const [result, created] = await LastSensorData.findOrCreate({
+            where: { dataCode: tableName }, // Burada doğru sütunu kullanın
+            defaults: {
+                dataCode: tableName,
+                lastUpdatedTime: latestData.time,
+            },
+        });
+
+        // Eğer zaten mevcutsa lastUpdatedTime'ı güncelle
+        if (!created) {
+            result.lastUpdatedTime = latestData.time;
+            await result.save();
+        }
+        console.log(created ? "Yeni kayıt oluşturuldu." : "Mevcut kayıt güncellendi.");
+    }
+
+ */
 
     if (!data || data.length === 0) {
         console.log("Seçilen aralıkta veri yok, en son veri gösteriliyor.");
