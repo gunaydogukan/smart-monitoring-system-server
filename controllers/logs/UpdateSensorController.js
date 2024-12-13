@@ -38,6 +38,47 @@ async function updateSensor(req, res) {
     }
 }
 
+//Gelen ip'ye göre otomatik aktif pasiflik değişimi
+async function isActiveForIP(req, res) {
+    const sensorId = req.params.id;
+    const isActive = req.params.isActive === 'true';
+    console.log(isActive);
+    try {
+        if (!sensorId) {
+            return res.status(400).json({ message: "Sensör id bulunamadı (isactiveFORİP)" });
+        }
+
+        const sensor = await Sensors.findByPk(sensorId);
+        if (!sensor) {
+            return res.status(404).json({ message: "Sensör bulunamadı." });
+        }
+
+        if (sensor.isActive === isActive) {
+            return res.status(200).json({
+                message: "Değiştirme işlemi olmadı.",
+                sensor,
+            });
+        }
+
+        await sensor.update({ isActive });
+
+        return res.status(200).json({
+            message: "Sensör durumu başarıyla güncellendi.",
+            sensor,
+        });
+
+    } catch (err) {
+        console.error("Hata:", err);
+        res.status(500).json({
+            message: "Sensör durumu güncellenirken bir hata oluştu.",
+            error: err.message,
+        });
+    }
+}
+
+
+
 module.exports = {
     updateSensor,
+    isActiveForIP,
 };
