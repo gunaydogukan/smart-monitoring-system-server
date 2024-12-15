@@ -1,75 +1,107 @@
-const {getAllSensors} = require("../../services/sensorServices"); //sensor bilgilerini alacağımız services
-const sensorData = require('../../models/sensors/SensorsData');
-const {SensorData} = require("../../models/sensors/SensorsData"); // ip log modeli
-const moment = require('moment');
-const sequelize = require("../../config/sensorDatadatabase");
-const Sequelize = require("sequelize"); //zaman hesabı için kullanılır
+const { getAllSensors } = require("../../services/sensorServices"); // sensor bilgilerini alacağımız services
+const LastSensorData = require('../../models/logs/LastSensorData');
+const sensorData = require('../../config/FurkanHocaDb/sensorDataDb');
+const Sequelize = require("sequelize");
 
-const checkSensorDataTimestamp = async (req,res) =>{
-    // erişim denetimi kontrolü yapılmadı. düşünülmedi İŞLEM BİTİNCE BAK KONTROL ET
-    try{
-        const allSensors=await getAllSensors();
-        const datacodeList = allSensors.sensors.map(sensor => sensor.datacode); //tüm sensörlerin datacodeleri alındı
-
-        //zaman kontrolü yapan metota gönderme
-        for(const datacode of datacodeList){
-            const time = await checkSensorTime(datacode);
-
-        }
-    }catch (err){
-        console.error("hata checkSensorDataTimestamp METOTU");
-        return res.status(500).json({ message: "checkSensorDataTimestamp METOTU", error: err.message });
-    }
-
-
-}
-
-const checkSensorTime = async (datacode) =>{
-    try{
-        console.log(`Kontrol edilen sensör = ${datacode}`);
-        //datacoda'a göre sensör table' ulaşıyoruz dinamik oldugu için
-        const sensorDataTable = await SensorData(datacode);
-
-        console.log("sensör bulundu : "+sensorDataTable);
-
-        const lastSensorData = await sensorDataTable.findOne({
-            order: [['time','DESC']], // tersten sıralayıp en sonu alıyor
-            limit:1
-        });
-
-        if(!lastSensorData){
-            console.log(`${datacode} koduna sahip sensör için veri bulunamadı.`);
-            return null;
-        }
-
-        const lastDataTime = moment(lastSensorData.time); // Son verinin zamanını `time` kolonundan alıyoruz
-        const currentTime = moment(new Date());
-
-        //zaman farkları alınır dakika cinsinden
-        const diffMinutes  = currentTime.diff(lastDataTime, 'minutes');
-
-        return diffMinutes ;
-
-    }catch (e) {
-        console.log("hata = checkSensorTime metotu");
-        throw new Error("checkSensorTime metodu hatası");
-    }
-}
-
-const findTable = async (code) => {
-    const tableName = code;
-
+const checkSensorDataTimestamp = async (req, res) => {
     try {
-        // Tabloyu doğrula
-        const result = await sequelize.query(`SELECT * FROM ${tableName} LIMIT 1`, {
-            type: Sequelize.QueryTypes.SELECT,
-        });
-        return result; // Tabloyu döndür
-    } catch (error) {
-        console.error('Tablo bulunamadı veya sorgu hatası:', error);
-        return null;
+        const allSensors = await getAllSensors();
+        const datacodeList = allSensors.sensors.map(sensor => sensor.datacode.toUpperCase()); // Tüm sensörlerin datacodeleri alındı
+
+        //burada paralel işlem yapar , ve hızı oldukça arttır
+        const results = await Promise.all(
+            datacodeList.map(async (datacode) => {
+                const table = await findTable(datacode);
+
+                if (!table) {
+                    console.log(`Tablo bulunamadı: ${datacode}`);
+                    return { datacode, error: "Tablo bulunamadı." };
+                }
+
+                const time = await checkSensorTime(table);
+                console.log(`Tablo: ${table}, Time: ${time}`);
+                return { datacode, time };
+            })
+        );
+
+        return res.status(200).json(results);
+    } catch (err) {
+        console.error("Hata checkSensorDataTimestamp METOTU", err);
+        return res.status(500).json({ message: "checkSensorDataTimestamp METOTU", error: err.message });
     }
 };
 
-module.exports = {checkSensorDataTimestamp};
+const checkSensorTime = async (tableName) => {
+    try {
+        console.log(`Kontrol edilen sensör (tableName): ${tableName}`);
 
+        const query = `
+            SELECT *
+            FROM \`${tableName}\`
+            ORDER BY time DESC
+                LIMIT 1
+        `;
+
+        const lastData = await sensorData.query(query, {
+            type: Sequelize.QueryTypes.SELECT,
+        });
+
+        if (!lastData || lastData.length === 0) {
+            console.log("Tabloda veri bulunamadı (checkSensorTime metodu)");
+            return null;
+        }
+
+        const latestData = lastData[0];
+
+        //BU İŞLEM SİLİNEBİLİR SADECE FURKAN HOCANIN DATABASE'İNDE YAPILABİLİR.
+        const [result, created] = await LastSensorData.findOrCreate({
+            where: { dataCode: tableName },
+            defaults: {
+                dataCode: tableName,
+                lastUpdatedTime: latestData.time,
+            },
+        });
+
+        if (!created) {
+            result.lastUpdatedTime = latestData.time;
+            await result.save();
+        }
+
+        console.log(created ? "Yeni kayıt oluşturuldu." : "Mevcut kayıt güncellendi.");
+
+        return result.lastUpdatedTime;
+    } catch (error) {
+        console.error("Hata: checkSensorTime metodu", error);
+        throw new Error("checkSensorTime metodu hatası");
+    }
+};
+
+//Datacoda göre , veri tablosundan , gerekli tabloyu bulmamıza yarayan metot
+const findTable = async (datacode) => {
+    try {
+        const query = `
+            SELECT TABLE_NAME
+            FROM INFORMATION_SCHEMA.TABLES
+            WHERE TABLE_NAME = :tableName
+              AND TABLE_SCHEMA = DATABASE()
+        `;
+
+        const result = await sensorData.query(query, {
+            replacements: { tableName: datacode },
+            type: Sequelize.QueryTypes.SELECT,
+        });
+
+        if (result.length > 0) {
+            console.log(`Tablo bulundu: ${result[0].TABLE_NAME}`);
+            return result[0].TABLE_NAME;
+        } else {
+            console.log("Tablo bulunamadı.");
+            return null;
+        }
+    } catch (error) {
+        console.error("Hata: Tablo bulunamadı.", error);
+        throw new Error("Tablo bulma hatası.");
+    }
+};
+
+module.exports = { checkSensorDataTimestamp };

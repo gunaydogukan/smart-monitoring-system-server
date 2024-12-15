@@ -5,7 +5,7 @@ http://localhost:5000/api/companiesCount
 http://localhost:5000/api/user-sensors
 http://localhost:5000/api/type
 http://localhost:5000/log/data-time-check
-
+http://localhost:5000/log/IP-controll?datacodes=L004,L005,L006,L007
 
 //POST
 
