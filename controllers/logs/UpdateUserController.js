@@ -287,7 +287,7 @@ const getUndefinedUsersAndActiveManagers = async (req, res) => {
                 role: 'manager',
                 isActive: 1,
             },
-            attributes: ['id', 'name', 'lastname', 'email'],
+            attributes: ['id', 'name', 'lastname', 'email','companyCode'],
         });
 
         // Undefined users tablosundaki tüm kayıtları al
@@ -298,7 +298,7 @@ const getUndefinedUsersAndActiveManagers = async (req, res) => {
             undefinedUsers.map(async (undefinedUser) => {
                 const user = await User.findOne({
                     where: { id: undefinedUser.originalUserId },
-                    attributes: ['id', 'name', 'lastname', 'email','role'],
+                    attributes: ['id', 'name', 'lastname', 'email','role','companyCode'],
                 });
 
                 if (!user) {
@@ -335,7 +335,7 @@ const withOutComapnyCodegetUndefinedUsersAndActiveManagers = async (req, res) =>
                 role: 'manager',
                 isActive: 1,
             },
-            attributes: ['id', 'name', 'lastname', 'email'],
+            attributes: ['id', 'name', 'lastname', 'email','companyCode'],
         });
 
         // Undefined users tablosundaki tüm kayıtları al
@@ -435,9 +435,62 @@ const assignPersonalsToManager = async (req, res) => {
 };
 
 
+const assignManager = async (req, res) => {
+    const { personalId, managerId } = req.body;
+
+    // Gerekli alanların gönderildiğini kontrol et
+    if (!personalId || !managerId) {
+        return res.status(400).json({ message: "Eksik veya geçersiz parametreler." });
+    }
+
+    try {
+        // Personel kullanıcısını bulun
+        const personal = await User.findByPk(personalId);
+        if (!personal || personal.role !== 'personal') {
+            return res.status(404).json({ message: "Personel bulunamadı veya geçersiz bir role sahip." });
+        }
+
+        // Yeni yönetici kullanıcısını bulun
+        const manager = await User.findByPk(managerId);
+        if (!manager || manager.role !== 'manager') {
+            return res.status(404).json({ message: "Yönetici bulunamadı veya geçersiz bir role sahip." });
+        }
+
+        // Eski verileri kaydet (log için)
+        const oldData = {
+            creator_id: personal.creator_id,
+        };
+
+        // Personelin `creator_id` alanını güncelle
+        await personal.update({ creator_id: managerId });
+
+        // Yeni verileri al (log için)
+        const newData = {
+            creator_id: personal.creator_id,
+        };
+
+        // Log kaydı oluştur
+        await UserLog.create({
+            userId: req.user.id, // İşlemi yapan kullanıcı
+            oldData: JSON.stringify(oldData),
+            newData: JSON.stringify(newData),
+            action: 'assign_manager',
+        });
+
+        res.status(200).json({
+            message: "Personel başarıyla yeni yöneticiye atandı.",
+            personal,
+        });
+    } catch (error) {
+        console.error("Yönetici atama hatası:", error);
+        res.status(500).json({ message: "Yönetici atanırken bir hata oluştu.", error });
+    }
+};
+
+
 
 
 module.exports = { updateUser ,modifyUserDetails,
     deactivateUser,activateUser,
     getUndefinedUsersAndActiveManagers ,assignPersonalsToManager,
-    withOutComapnyCodegetUndefinedUsersAndActiveManagers};
+    withOutComapnyCodegetUndefinedUsersAndActiveManagers,assignManager};

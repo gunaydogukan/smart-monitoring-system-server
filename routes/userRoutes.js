@@ -59,6 +59,9 @@ router.get('/users/undefined-users-and-managers', authenticateToken,
 router.post('/assign-personals', authenticateToken,
     UpdateUserController.assignPersonalsToManager
 );
+router.post("/assign-manager",authenticateToken,
+UpdateUserController.assignManager);
+
 const UpdateSensorController = require('../controllers/logs/UpdateSensorController');
 router.post('/user/sensor-operations', authenticateToken,
     UpdateSensorController.handleSensorOperations);
