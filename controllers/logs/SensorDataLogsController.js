@@ -5,8 +5,17 @@ const Sequelize = require("sequelize");
 
 const checkSensorDataTimestamp = async (req, res) => {
     try {
-        const allSensors = await getAllSensors();
-        const datacodeList = allSensors.sensors.map(sensor => sensor.datacode.toUpperCase()); // Tüm sensörlerin datacodeleri alındı
+        console.log("-----------------------------------------------------------------------")
+        console.log("GÖNDERİLEN");
+        const { sensors } = req.query;
+
+
+        if (!sensors || !Array.isArray(sensors)) {
+            return res.status(400).json({ message: "Sensör listesi gerekli ve bir dizi olmalıdır." });
+        }
+
+        //const datacodeList = sensors.sensors.map(sensor => sensor.datacode.toUpperCase()); // Tüm sensörlerin datacodeleri alındı
+        const datacodeList = sensors;
 
         //burada paralel işlem yapar , ve hızı oldukça arttır
         const results = await Promise.all(
