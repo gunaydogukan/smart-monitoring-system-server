@@ -1,6 +1,9 @@
 
 //YAPILACAKLAR
 
+(sensor İP'bilgileri alınırken daha verimli alınmasına olanak tanı sensör data gibi
+birden fazla sensör bilgileri vs alınıyor bunları tespit et daha düzenle
+)
 Sensör verisinin son verdiği zamanı toplu almak içni soket gerekebilir veya daha verimli bir şey yapılabilir (Maliyet çok)
 
 GRAFİK VERİSİ DÜZENİ(VERİ DOĞRU MU GELİYOR YANLIŞ MI GELİYOR KONTROLÜ ANLAŞILMIYO DİKKATLİ BAK)
