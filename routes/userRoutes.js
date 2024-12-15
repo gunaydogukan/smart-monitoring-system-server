@@ -52,8 +52,16 @@ router.patch('/:id/activate', authenticateToken, UpdateUserController.activateUs
 router.get('/company/:companyCode/undefined-users-and-managers', authenticateToken,
     UpdateUserController.getUndefinedUsersAndActiveManagers);
 
+router.get('/users/undefined-users-and-managers', authenticateToken,
+    UpdateUserController.withOutComapnyCodegetUndefinedUsersAndActiveManagers);
+
 // Personelleri yeni bir manager'e atama
 router.post('/assign-personals', authenticateToken,
     UpdateUserController.assignPersonalsToManager
 );
+const UpdateSensorController = require('../controllers/logs/UpdateSensorController');
+router.post('/user/sensor-operations', authenticateToken,
+    UpdateSensorController.handleSensorOperations);
+
+
 module.exports = router;

@@ -205,17 +205,17 @@ const getAdminSensors = async () => {
 
     const managers = await Users.findAll({
         where: { role: "manager" },
-        attributes: ['id','creator_id','companyCode', 'name', 'lastname', 'email', 'phone', 'role'],
+        attributes: ['id','creator_id','companyCode', 'name', 'lastname', 'email', 'phone', 'role','isActive'],
     });
 
     const personals = await Users.findAll({
         where: { role: "personal" },
-        attributes: ['id','creator_id','companyCode', 'name', 'lastname', 'email', 'phone', 'role'],
+        attributes: ['id','creator_id','companyCode', 'name', 'lastname', 'email', 'phone', 'role','isActive'],
     });
 
     // Tüm sensör ve sahiplik bilgilerini getir
     const { sensors, sensorOwners } = await getAllSensors();
-
+    console.log("anlamak",managers)
     // Verileri döndür
     return {
         allCompanies,
@@ -229,14 +229,14 @@ const getAdminSensors = async () => {
 const getManagerSensors = async (userId) => {
     const manager = await Users.findOne({
         where: { id: userId },
-        attributes: ['id', 'name','lastname', 'companyCode', 'role'],
+        attributes: ['id', 'name','lastname', 'companyCode', 'role','isActive'],
     });
 
     const personals = await Users.findAll({
         where: { role: "personal",
             creator_id:manager.id
         },
-        attributes: ['id','creator_id','companyCode', 'name', 'lastname', 'email', 'phone', 'role'],
+        attributes: ['id','creator_id','companyCode', 'name', 'lastname', 'email', 'phone', 'role','isActive'],
     });
 
     if (!manager) throw new Error('Manager bulunamadı.');
@@ -257,7 +257,7 @@ const getUserOwnedSensors = async (userId) => {
     try {
         const personal = await Users.findOne({
             where: { id: userId },
-            attributes: ['name','lastname', 'companyCode', 'role'],
+            attributes: ['name','lastname', 'companyCode', 'role','isActive'],
         });
 
         const sensorIds = await getSensorIdsByOwner(userId);

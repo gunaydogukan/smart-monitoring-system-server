@@ -1,6 +1,9 @@
 const Sensors = require('../../models/sensors/Sensors');
 const SensorLogs = require('../../models/logging/sensorsLog');
-
+const SensorsOwner = require('../../models/sensors/sensorOwner');
+const UndefinedSensor = require('../../models/sensors/Undefined_sensors');
+const SensorTypes = require('../../models/sensors/SensorTypes');
+const {Op} = require("sequelize");
 // Sensör güncelleme fonksiyonu
 async function updateSensor(req, res) {
     const sensorId = req.params.id; // Güncellenecek sensörün ID'si
@@ -37,6 +40,212 @@ async function updateSensor(req, res) {
         res.status(500).json({ message: 'Sensör güncellenirken bir hata oluştu.', error });
     }
 }
+
+
+const handleSensorOperations = async (req, res) => {
+    const { userId, role } = req.body;
+
+    try {
+        if (!userId || !role) {
+            return res.status(400).json({ message: "Eksik parametreler. userId ve role gerekli." });
+        }
+
+        if (role === "manager") {
+            const relatedSensors = await SensorsOwner.findAll({
+                where: { sensor_owner: userId },
+            });
+
+            for (const sensor of relatedSensors) {
+                await UndefinedSensor.create({
+                    originalSensorId: sensor.sensor_id,
+                    deactivatedAt: new Date(),
+                });
+
+                await SensorsOwner.destroy({
+                    where: { sensor_id: sensor.sensor_id },
+                });
+
+                await SensorLogs.create({
+                    sensorId: sensor.sensor_id,
+                    oldData: JSON.stringify({ sensorId: sensor.sensor_id, owner: userId }),
+                    newData: JSON.stringify({ owner: null }),
+                    action: "unlink_sensor_manager",
+                    timestamp: new Date(),
+                });
+            }
+        } else if (role === "personal") {
+            const relatedSensors = await SensorsOwner.findAll({
+                where: { sensor_owner: userId },
+            });
+
+            for (const sensor of relatedSensors) {
+                await SensorsOwner.destroy({
+                    where: { sensor_id: sensor.sensor_id },
+                });
+
+                await SensorLogs.create({
+                    sensorId: sensor.sensor_id,
+                    oldData: JSON.stringify({ sensorId: sensor.sensor_id, owner: userId }),
+                    newData: JSON.stringify({ owner: null }),
+                    action: "unlink_sensor_personal",
+                    timestamp: new Date(),
+                });
+            }
+        }
+
+        res.status(200).json({ message: "Sensör işlemleri başarıyla tamamlandı." });
+    } catch (error) {
+        console.error("Sensör işlemlerinde hata:", error);
+        res.status(500).json({ message: "Sensör işlemleri sırasında bir hata oluştu." });
+    }
+};
+const fetchUndefinedSensors = async (req, res) => {
+    const { companyCode } = req.query;
+
+    try {
+        // UndefinedSensor tablosunu sorgula
+        const undefinedSensors = await UndefinedSensor.findAll();
+
+        if (!undefinedSensors || undefinedSensors.length === 0) {
+            return res.status(200).json({
+                message: companyCode
+                    ? 'Belirtilen şirket koduna ait tanımsız sensör bulunmamaktadır.'
+                    : 'Tanımsız sensör bulunmamaktadır.',
+                data: [], // Boş bir liste döndür
+            });
+        }
+
+        const sensorIds = undefinedSensors.map((us) => us.originalSensorId);
+        console.log("Sorgulanan sensorIds:", sensorIds);
+
+        // Sensors tablosundan sensörleri al
+        const sensors = await Sensors.findAll({
+            where: {
+                id: sensorIds,
+                ...(companyCode && { company_code: companyCode }), // Şirket kodu varsa filtre uygula
+            },
+            attributes: ['id', 'name', 'type', 'company_code'],
+        });
+
+        // SensorsTypesTables tablosundan tüm tipleri al
+        const sensorTypes = await SensorTypes.findAll({
+            attributes: ['id', 'type'],
+        });
+
+        // UndefinedSensor ve Sensors tablosunu manuel birleştir
+        const result = undefinedSensors.map((undefinedSensor) => {
+            const sensor = sensors.find((s) => s.id === undefinedSensor.originalSensorId);
+            if (!sensor) {
+                console.warn(`Sensör bilgisi bulunamadı: ID ${undefinedSensor.originalSensorId}`);
+                return null; // Bu sensörü atla
+            }
+
+            // SensorsTypesTables tablosundan sensör tipini bul
+            const sensorType = sensorTypes.find((st) => st.id === sensor.type);
+
+            return {
+                id: undefinedSensor.id,
+                originalSensorId: undefinedSensor.originalSensorId,
+                deactivatedAt: undefinedSensor.deactivatedAt,
+                sensorName: sensor.name,
+                sensorType: sensorType ? sensorType.type : 'Bilinmiyor', // Tip bilgisi yoksa 'Bilinmiyor'
+                companyCode: sensor.company_code,
+            };
+        }).filter(Boolean); // Null olanları filtrele
+
+        if (result.length === 0) {
+            return res.status(200).json({
+                message: companyCode
+                    ? 'Belirtilen şirket koduna ait tanımsız sensör bulunmamaktadır.'
+                    : 'Tanımsız sensör bulunmamaktadır.',
+                data: [], // Boş bir liste döndür
+            });
+        }
+
+        console.log("Sonuç:", result);
+        res.status(200).json({
+            message: 'Tanımsız sensörler başarıyla getirildi.',
+            data: result,
+        });
+    } catch (error) {
+        console.error('Tanımsız sensörler alınırken hata:', error.message);
+        res.status(500).json({ message: 'Tanımsız sensörler alınırken bir hata oluştu.', error: error.message });
+    }
+};
+
+
+
+const assignSensorsToManager = async (req, res) => {
+    const { managerId, sensorIds } = req.body;  // Gelen body'den managerId ve sensorIds
+
+    if (!managerId || !Array.isArray(sensorIds) || sensorIds.length === 0) {
+        return res.status(400).json({ message: "Eksik veya geçersiz parametreler." });
+    }
+
+    try {
+        const logs = []; // Log kayıtlarını toplamak için bir dizi
+
+        // Gelen sensör ID'leriyle işlem yap
+        for (let sensorId of sensorIds) {
+            // UndefinedSensor tablosunda sensörü bul
+            const undefinedSensor = await UndefinedSensor.findOne({
+                where: { id: sensorId }, // Gelen sensör ID'yi arıyoruz
+                attributes: ['id', 'originalSensorId'], // Eski sensör bilgileri için gerekli alanlar
+            });
+
+            if (!undefinedSensor) {
+                console.log(`Sensor ID ${sensorId} UndefinedSensor tablosunda bulunamadı.`);
+                continue;
+            }
+
+            // Eski sensör bilgileri (log için)
+            const oldData = JSON.stringify({
+                originalSensorId: undefinedSensor.originalSensorId,
+                previousOwner: 'Undefined',
+            });
+
+            // Sensörü `sensor_owners` tablosuna ekle
+            await SensorsOwner.create({
+                sensor_id: undefinedSensor.originalSensorId,  // originalSensorId'yi kullanıyoruz
+                sensor_owner: managerId,  // Yeni atanacak yönetici
+            });
+
+            // UndefinedSensor tablosundan sil
+            await UndefinedSensor.destroy({
+                where: { id: undefinedSensor.id }, // Tanımsız sensörü tablodan sil
+            });
+
+            // Yeni sensör bilgileri (log için)
+            const newData = JSON.stringify({
+                originalSensorId: undefinedSensor.originalSensorId,
+                newOwner: managerId,
+            });
+
+            // Log kaydını diziye ekle
+            logs.push({
+                sensorId: undefinedSensor.originalSensorId,
+                oldData,
+                newData,
+                action: 'assign',
+                timestamp: new Date(),
+            });
+
+            console.log(`Sensor ID ${sensorId} başarıyla atanarak UndefinedSensor tablosundan silindi.`);
+        }
+
+        // Tüm logları toplu olarak SensorLogs tablosuna ekle
+        if (logs.length > 0) {
+            await SensorLogs.bulkCreate(logs);
+        }
+
+        res.status(200).json({ message: "Sensörler başarıyla atandı ve loglandı." });
+    } catch (error) {
+        console.error("Atama sırasında hata:", error);
+        res.status(500).json({ message: "Sensörler atanırken bir hata oluştu.", error: error.message });
+    }
+};
+
+
 
 //Gelen ip'ye göre otomatik aktif pasiflik değişimi
 async function isActiveForIP(req, res) {
@@ -77,8 +286,7 @@ async function isActiveForIP(req, res) {
 }
 
 
-
 module.exports = {
-    updateSensor,
+    updateSensor,handleSensorOperations,fetchUndefinedSensors,assignSensorsToManager,
     isActiveForIP,
 };

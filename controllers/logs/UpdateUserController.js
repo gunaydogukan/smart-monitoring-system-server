@@ -97,7 +97,6 @@ const modifyUserDetails = async (req, res) => {
 };
 
 
-
 // Kullanıcıyı pasif duruma getirme
 const deactivateUser = async (req, res) => {
     const { id } = req.params;
@@ -121,12 +120,15 @@ const deactivateUser = async (req, res) => {
             const newData = { ...updatedUser.toJSON() }; // Yeni kullanıcı verilerini al
 
             // Log kaydını oluştur
-            await UserLog.create({
-                userId: id,
-                oldData: JSON.stringify(oldData),
-                newData: JSON.stringify(newData),
-                action: 'deactivate_user',
-            });
+            if(user.role === "personal"){
+                await UserLog.create({
+                    userId: id,
+                    oldData: JSON.stringify(oldData),
+                    newData: JSON.stringify(newData),
+                    action: 'deactivate_personal',
+                });
+            }
+
 
             return res.status(200).json({
                 message: 'Kullanıcı başarıyla pasif hale getirildi.',
@@ -193,7 +195,7 @@ const deactivateUser = async (req, res) => {
                 userId: id,
                 oldData: JSON.stringify(oldData),
                 newData: JSON.stringify(newData),
-                action: 'deactivate_user',
+                action: 'deactivate_manager',
             });
 
             await UndefinedUser.create({
@@ -217,8 +219,6 @@ const deactivateUser = async (req, res) => {
     }
 };
 
-
-
 const activateUser = async (req, res) => {
     const { id } = req.params;
 
@@ -232,16 +232,41 @@ const activateUser = async (req, res) => {
             return res.status(400).json({ message: 'Kullanıcı zaten aktif durumda.' });
         }
 
+        // Eski verileri kaydet (log için)
+        const oldData = { ...user.toJSON() };
+
         user.isActive = 1; // Kullanıcıyı aktif hale getir
         await user.save();
 
         // Undefined_users tablosundan kullanıcıyı kaldır
         await UndefinedUser.destroy({ where: { originalUserId: id } });
 
-        // Aktif yapma işlemi için uygun mesaj döndür
+        // Yeni verileri kaydet (log için)
+        const newData = { ...user.toJSON() };
+
+        // Log kaydı oluştur
+        if(user.role === "personal"){
+            await UserLog.create({
+                userId: id,
+                oldData: JSON.stringify(oldData),
+                newData: JSON.stringify(newData),
+                action: 'activate_personal',
+            });
+        }
+        if(user.role === "manager"){
+            await UserLog.create({
+                userId: id,
+                oldData: JSON.stringify(oldData),
+                newData: JSON.stringify(newData),
+                action: 'activate_manager',
+            });
+        }
+
+
+        // Yanıt döndür
         return res.status(200).json({
-            message: `Kullanıcı başarıyla aktif hale getirildi .`,
-            notification: ` aktif hale getirildi.`,
+            message: `${user.name} başarıyla aktif hale getirildi.`,
+            notification: `${user.name} başarıyla aktif hale getirildi.`,
             user,
         });
     } catch (error) {
@@ -249,6 +274,7 @@ const activateUser = async (req, res) => {
         res.status(500).json({ message: 'Bir hata oluştu.' });
     }
 };
+
 
 const getUndefinedUsersAndActiveManagers = async (req, res) => {
     const { companyCode } = req.params;
@@ -298,6 +324,56 @@ const getUndefinedUsersAndActiveManagers = async (req, res) => {
         res.status(500).json({ message: "Veriler alınırken bir hata oluştu.", error });
     }
 };
+const withOutComapnyCodegetUndefinedUsersAndActiveManagers = async (req, res) => {
+    const { companyCode } = req.params; // companyCode opsiyonel olacak
+
+    try {
+        // Aktif manager'leri getir (şirket seçildiyse filtre uygula)
+        const activeManagers = await User.findAll({
+            where: {
+                ...(companyCode && { companyCode }), // Eğer companyCode varsa filtre uygula
+                role: 'manager',
+                isActive: 1,
+            },
+            attributes: ['id', 'name', 'lastname', 'email'],
+        });
+
+        // Undefined users tablosundaki tüm kayıtları al
+        const undefinedUsers = await UndefinedUser.findAll();
+
+        // Undefined users için `users` tablosundan ilgili bilgileri al
+        const undefinedUserDetails = await Promise.all(
+            undefinedUsers.map(async (undefinedUser) => {
+                const user = await User.findOne({
+                    where: { id: undefinedUser.originalUserId },
+                    attributes: ['id', 'name', 'lastname', 'email', 'role', 'companyCode'],
+                });
+
+                if (!user) {
+                    console.warn("Eksik kullanıcı bilgisi:", undefinedUser);
+                    return null; // Eksik kullanıcıyı atla
+                }
+
+                return {
+                    id: undefinedUser.id,
+                    user: user.toJSON(),
+                };
+            })
+        );
+
+        console.log("UndefinedUserDetails Users Data:", undefinedUserDetails);
+
+        // Yanıtı döndür
+        res.status(200).json({
+            activeManagers,
+            undefinedUsers: undefinedUserDetails.filter((user) => user !== null),
+        });
+    } catch (error) {
+        console.error("Veriler alınırken hata:", error);
+        res.status(500).json({ message: "Veriler alınırken bir hata oluştu.", error });
+    }
+};
+
 
 const assignPersonalsToManager = async (req, res) => {
     const { managerId, personalIds } = req.body;
@@ -307,6 +383,15 @@ const assignPersonalsToManager = async (req, res) => {
     }
 
     try {
+        // Eski durum için verileri kaydet (log için)
+        const oldPersonals = await User.findAll({
+            where: {
+                id: personalIds,
+                role: 'personal',
+            },
+            attributes: ['id', 'creator_id'],
+        });
+
         // Personellerin creator_id'sini güncelle
         await User.update(
             { creator_id: managerId },
@@ -325,6 +410,23 @@ const assignPersonalsToManager = async (req, res) => {
             },
         });
 
+        // Yeni durum için verileri al (log için)
+        const newPersonals = await User.findAll({
+            where: {
+                id: personalIds,
+                role: 'personal',
+            },
+            attributes: ['id', 'creator_id'],
+        });
+
+        // Log kaydı oluştur
+        await UserLog.create({
+            userId: managerId,
+            oldData: JSON.stringify(oldPersonals),
+            newData: JSON.stringify(newPersonals),
+            action: 'assign_personals_to_manager',
+        });
+
         res.status(200).json({ message: "Personeller başarıyla atandı." });
     } catch (error) {
         console.error("Atama sırasında hata:", error);
@@ -334,4 +436,8 @@ const assignPersonalsToManager = async (req, res) => {
 
 
 
-module.exports = { updateUser ,modifyUserDetails,deactivateUser,activateUser,getUndefinedUsersAndActiveManagers ,assignPersonalsToManager};
+
+module.exports = { updateUser ,modifyUserDetails,
+    deactivateUser,activateUser,
+    getUndefinedUsersAndActiveManagers ,assignPersonalsToManager,
+    withOutComapnyCodegetUndefinedUsersAndActiveManagers};
