@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const sensorsController = require("../controllers/SensorsControllers");
 const { authenticateToken } = require("../middleware/BearerTokenMiddleware");
+const  UpdateSensorController  = require('../controllers/logs/UpdateSensorController');
 
 // Sensör ekleme ve tür ekleme
 router.post('/add-new-type', authenticateToken, sensorsController.addNewType);
@@ -17,5 +18,8 @@ router.get('/sensors', authenticateToken, sensorsController.getUserSensors);
 //owner sensörleri gösterme
 router.get('/user-sensors', authenticateToken, sensorsController.getUserSensors);
 
+router.get('/undefined-sensors', authenticateToken, UpdateSensorController.fetchUndefinedSensors);
+
+router.post('/sensors-assign' ,authenticateToken,UpdateSensorController.assignSensorsToManager)
 
 module.exports = router;
