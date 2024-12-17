@@ -48,8 +48,8 @@ const addSensors = async (req, res) => {
         }
 
         //sensör verisi ekleme alanı
-        const newSensorData = await SensorData(newSensor);
-        console.log(newSensorData);
+        //const newSensorData = await SensorData(newSensor);
+       // console.log(newSensorData);
 
         //sensör sahibi ekleme alanı
         const sensorId = newSensor.id
