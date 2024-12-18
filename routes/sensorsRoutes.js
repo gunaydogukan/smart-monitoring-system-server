@@ -22,4 +22,6 @@ router.get('/undefined-sensors', authenticateToken, UpdateSensorController.fetch
 
 router.post('/sensors-assign' ,authenticateToken,UpdateSensorController.assignSensorsToManager)
 
+router.get("/company/:companyCode/sensors", authenticateToken, sensorsController.getSensorsByCompany);
+
 module.exports = router;

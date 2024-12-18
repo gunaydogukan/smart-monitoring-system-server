@@ -624,7 +624,34 @@ const getUserCount = async (req, res) => {
     res.status(200).json(result);
 };
 
-module.exports = { register, login, addAddress ,addCompanies , addManager ,addPersonal,getCompanies,getCities, getProfile,getUsers,getManagersByCompany,getPersonalsByCompany,getUserCount};
+const getActiveManagersByCompany = async (req, res) => {
+    const { companyCode } = req.params;
+
+    try {
+        // Managers'ları companyCode, role ve isActive'ye göre sorguluyoruz
+        const managers = await User.findAll({
+            where: {
+                companyCode: companyCode,
+                role: 'manager', // Sadece manager'lar
+                isActive: true, // Yalnızca aktif yöneticiler
+            },
+            attributes: ['id', 'name', 'lastname', 'email'], // Döndürülecek alanlar
+        });
+
+        if (!managers || managers.length === 0) {
+            return res.status(404).json({ message: 'Aktif yönetici bulunamadı.' });
+        }
+
+        // Yöneticileri döndürüyoruz
+        res.status(200).json({ success: true, managers });
+    } catch (error) {
+        console.error('Manager verisi çekilemedi:', error);
+        res.status(500).json({ error: 'Yöneticiler verisi çekilemedi. Lütfen tekrar deneyin.' });
+    }
+}
+
+
+module.exports = {getActiveManagersByCompany, register, login, addAddress ,addCompanies , addManager ,addPersonal,getCompanies,getCities, getProfile,getUsers,getManagersByCompany,getPersonalsByCompany,getUserCount};
 
 
 

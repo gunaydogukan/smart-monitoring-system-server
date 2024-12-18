@@ -277,6 +277,43 @@ const getUserOwnedSensors = async (userId) => {
         throw new Error('Sensörleri alırken bir hata oluştu.');
     }
 };
+const getSensorsByCompany = async (req, res) => {
+    const { companyCode } = req.params;
 
-module.exports = { addNewType, addSensors, getTypes,getUserSensors };
+    try {
+        // companyCode'ya göre sensörleri çekiyoruz
+        const sensors = await Sensors.findAll({
+            where: {
+                companyCode: companyCode, // Şirkete ait sensörler
+            },
+            attributes: ['id', 'name', 'type'], // Döndürülecek sensör özellikleri
+        });
+
+        if (!sensors || sensors.length === 0) {
+            return res.status(404).json({ message: 'Bu kurum için sensör bulunamadı.' });
+        }
+
+        // Sensörlerin her birinin type'ını sensors_types_table'dan çekip isimlendirme
+        const sensorsWithTypeNames = await Promise.all(sensors.map(async (sensor) => {
+            // Type ID'si ile sensor_types_table'dan açıklamayı alıyoruz
+            const sensorType = await Type.findOne({
+                where: { id: sensor.type }, // `type`'ı ID olarak alıp sensor_types_table'dan buluyoruz
+                attributes: ['type'], // `type` alanını alıyoruz
+            });
+
+            return {
+                ...sensor.toJSON(), // Sensor objesini alıyoruz
+                typeName: sensorType ? sensorType.type : 'Bilinmeyen Tip', // Eğer tip varsa, yoksa 'Bilinmeyen Tip' döndür
+            };
+        }));
+
+        // Sensörleri başarıyla döndürüyoruz
+        res.status(200).json({ success: true, sensors: sensorsWithTypeNames });
+    } catch (error) {
+        console.error("Sensör verisi çekilemedi:", error);
+        res.status(500).json({ message: 'Sensör verisi çekilemedi. Lütfen tekrar deneyin.' });
+    }
+};
+
+module.exports = { addNewType, addSensors, getTypes,getUserSensors ,getSensorsByCompany};
 
