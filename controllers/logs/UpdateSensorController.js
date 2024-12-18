@@ -4,6 +4,9 @@ const SensorsOwner = require('../../models/sensors/sensorOwner');
 const UndefinedSensor = require('../../models/sensors/Undefined_sensors');
 const SensorTypes = require('../../models/sensors/SensorTypes');
 const {Op} = require("sequelize");
+const Users = require('../../models/users/User');
+const Sequelize = require('sequelize');
+const sequelize = require('../../config/database'); // Veritabanı bağlantısı
 // Sensör güncelleme fonksiyonu
 async function updateSensor(req, res) {
     const sensorId = req.params.id; // Güncellenecek sensörün ID'si
@@ -43,11 +46,11 @@ async function updateSensor(req, res) {
 
 
 const handleSensorOperations = async (req, res) => {
-    const { userId, role } = req.body;
+    const { userId, role, companyCode } = req.body;
 
     try {
-        if (!userId || !role) {
-            return res.status(400).json({ message: "Eksik parametreler. userId ve role gerekli." });
+        if (!userId || !role || !companyCode) {
+            return res.status(400).json({ message: "Eksik parametreler. userId, role ve companyCode gerekli." });
         }
 
         if (role === "manager") {
@@ -56,19 +59,49 @@ const handleSensorOperations = async (req, res) => {
             });
 
             for (const sensor of relatedSensors) {
-                await UndefinedSensor.create({
-                    originalSensorId: sensor.sensor_id,
-                    deactivatedAt: new Date(),
-                });
+                // Manuel SQL sorgusu ile başka manager olup olmadığını kontrol et
+                const otherManagersWithSameSensor = await sequelize.query(
+                    `
+                    SELECT so.*
+                    FROM sensors_owners so
+                    INNER JOIN users u ON so.sensor_owner = u.id
+                    WHERE so.sensor_id = :sensorId
+                      AND so.sensor_owner != :userId
+                      AND u.role = 'manager'
+                      AND u.companyCode = :companyCode
+                    LIMIT 1
+                    `,
+                    {
+                        type: sequelize.QueryTypes.SELECT,
+                        replacements: {
+                            sensorId: sensor.sensor_id,
+                            userId: userId,
+                            companyCode: companyCode,
+                        },
+                    }
+                );
 
+                if (otherManagersWithSameSensor.length === 0) {
+                    // Eğer başka bir manager ile bağlantılı değilse, sensörü UndefinedSensor tablosuna aktar
+                    await UndefinedSensor.create({
+                        originalSensorId: sensor.sensor_id,
+                        deactivatedAt: new Date(),
+                    });
+                }
+
+                // Gelen manager için sensör kaydını sadece SensorsOwner tablosundan sil
                 await SensorsOwner.destroy({
-                    where: { sensor_id: sensor.sensor_id },
+                    where: {
+                        sensor_id: sensor.sensor_id,
+                        sensor_owner: userId,
+                    },
                 });
 
+                // Sensör loglarını kaydet
                 await SensorLogs.create({
                     sensorId: sensor.sensor_id,
                     oldData: JSON.stringify({ sensorId: sensor.sensor_id, owner: userId }),
-                    newData: JSON.stringify({ owner: null }),
+                    newData: JSON.stringify({ owner: otherManagersWithSameSensor.length > 0 ? otherManagersWithSameSensor[0].sensor_owner : null }),
                     action: "unlink_sensor_manager",
                     timestamp: new Date(),
                 });
@@ -99,6 +132,7 @@ const handleSensorOperations = async (req, res) => {
         res.status(500).json({ message: "Sensör işlemleri sırasında bir hata oluştu." });
     }
 };
+
 const fetchUndefinedSensors = async (req, res) => {
     const { companyCode } = req.query;
 
