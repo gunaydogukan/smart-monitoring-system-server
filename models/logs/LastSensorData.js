@@ -18,6 +18,10 @@ const LatestSensorData = sequelize.define('latest_sensor_data', {
         allowNull: false,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
     },
+    data: {
+        type: Sequelize.JSON, // JSON formatında veriler için
+        allowNull: true, // İsteğe bağlı
+    },
 }, {
     timestamps: false,
 });

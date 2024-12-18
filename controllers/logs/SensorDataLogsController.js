@@ -5,10 +5,7 @@ const Sequelize = require("sequelize");
 
 const checkSensorDataTimestamp = async (req, res) => {
     try {
-        console.log("-----------------------------------------------------------------------")
-        console.log("GÖNDERİLEN");
         const { sensors } = req.query;
-
 
         if (!sensors || !Array.isArray(sensors)) {
             return res.status(400).json({ message: "Sensör listesi gerekli ve bir dizi olmalıdır." });
@@ -27,9 +24,9 @@ const checkSensorDataTimestamp = async (req, res) => {
                     return { datacode, error: "Tablo bulunamadı." };
                 }
 
-                const time = await checkSensorTime(table);
-                console.log(`Tablo: ${table}, Time: ${time}`);
-                return { datacode, time };
+                const result = await checkSensorTime(table);
+                console.log(`Tablo: ${table}, Time: ${result.lastUpdatedTime}, Data : ${result.data}`);
+                return { datacode, result };
             })
         );
 
@@ -62,23 +59,28 @@ const checkSensorTime = async (tableName) => {
 
         const latestData = lastData[0];
 
+        // `id` ve `time` dışındaki verileri lastdatas ' a yükle
+        const { id, time, ...lastdatas } = latestData;
+
         //BU İŞLEM SİLİNEBİLİR SADECE FURKAN HOCANIN DATABASE'İNDE YAPILABİLİR.
         const [result, created] = await LastSensorData.findOrCreate({
             where: { dataCode: tableName },
             defaults: {
                 dataCode: tableName,
                 lastUpdatedTime: latestData.time,
+                data: lastdatas, // Diğer verileri JSON olarak ekle
             },
         });
 
         if (!created) {
-            result.lastUpdatedTime = latestData.time;
-            await result.save();
+            result.lastUpdatedTime = latestData.time;  // Zamanı günceller
+            result.data = lastdatas;  // sensör verisini günceller
+            await result.save();  // Veriyi kaydeder
         }
 
         console.log(created ? "Yeni kayıt oluşturuldu." : "Mevcut kayıt güncellendi.");
 
-        return result.lastUpdatedTime;
+        return result;
     } catch (error) {
         console.error("Hata: checkSensorTime metodu", error);
         throw new Error("checkSensorTime metodu hatası");
