@@ -284,7 +284,7 @@ const getSensorsByCompany = async (req, res) => {
         // companyCode'ya göre sensörleri çekiyoruz
         const sensors = await Sensors.findAll({
             where: {
-                companyCode: companyCode, // Şirkete ait sensörler
+                company_code: companyCode, // Şirkete ait sensörler
             },
             attributes: ['id', 'name', 'type'], // Döndürülecek sensör özellikleri
         });

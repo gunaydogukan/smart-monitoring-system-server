@@ -320,7 +320,81 @@ async function isActiveForIP(req, res) {
 }
 
 
+
+const assignSensorsToUser = async (req, res) => {
+    const { sensorIds, managerIds } = req.body;
+
+    // Validation: Gelen veriler kontrol edilir
+    if (!sensorIds || !Array.isArray(sensorIds) || sensorIds.length === 0) {
+        return res.status(400).json({ message: 'Lütfen en az bir sensör seçin!' });
+    }
+    if (!managerIds || !Array.isArray(managerIds) || managerIds.length === 0) {
+        return res.status(400).json({ message: 'Lütfen en az bir yönetici seçin!' });
+    }
+
+    try {
+        // Mevcut atamaları kontrol et
+        const existingAssignments = await SensorsOwner.findAll({
+            where: {
+                sensor_id: sensorIds,
+                sensor_owner: managerIds,
+            },
+        });
+
+        // Mevcut ilişkileri bir Set olarak al
+        const existingPairs = new Set(
+            existingAssignments.map(
+                (assignment) => `${assignment.sensor_id}-${assignment.sensor_owner}`
+            )
+        );
+
+        // Sadece yeni atamaları ekle
+        const assignmentsToAdd = [];
+        const logsToAdd = []; // Logları tutacak dizi
+        sensorIds.forEach((sensorId) => {
+            managerIds.forEach((managerId) => {
+                const pairKey = `${sensorId}-${managerId}`;
+                if (!existingPairs.has(pairKey)) {
+                    assignmentsToAdd.push({
+                        sensor_owner: managerId,
+                        sensor_id: sensorId,
+                    });
+
+                    // Log için ekle
+                    logsToAdd.push({
+                        sensorId,
+                        oldData: JSON.stringify({ sensor_owner: null }), // Eski veri
+                        newData: JSON.stringify({ sensor_owner: managerId }), // Yeni veri
+                        action: 'yöneticiye_sensor_tanımlama',
+                    });
+                }
+            });
+        });
+
+        if (assignmentsToAdd.length > 0) {
+            // Yeni ilişkileri toplu olarak ekle
+            await SensorsOwner.bulkCreate(assignmentsToAdd);
+        }
+
+        // Logları kaydet
+        if (logsToAdd.length > 0) {
+            await SensorLogs.bulkCreate(logsToAdd);
+        }
+
+        res.status(200).json({
+            message:
+                assignmentsToAdd.length > 0
+                    ? 'Sensörler ve yöneticiler başarıyla atanmıştır!'
+                    : 'Tüm sensörler zaten atanmıştı.',
+        });
+    } catch (error) {
+        console.error('Error assigning sensors:', error);
+        res.status(500).json({ message: 'Sensörleri atarken bir hata oluştu.' });
+    }
+};
+
+
 module.exports = {
     updateSensor,handleSensorOperations,fetchUndefinedSensors,assignSensorsToManager,
-    isActiveForIP,
+    isActiveForIP,assignSensorsToUser,
 };

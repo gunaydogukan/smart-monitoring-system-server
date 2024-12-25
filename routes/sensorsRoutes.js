@@ -24,4 +24,6 @@ router.post('/sensors-assign' ,authenticateToken,UpdateSensorController.assignSe
 
 router.get("/company/:companyCode/sensors", authenticateToken, sensorsController.getSensorsByCompany);
 
+router.post('/assign-random-sensors', authenticateToken, UpdateSensorController.assignSensorsToUser);
+
 module.exports = router;
