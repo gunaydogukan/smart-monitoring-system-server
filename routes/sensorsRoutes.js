@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const sensorsController = require("../controllers/SensorsControllers");
-const { authenticateToken } = require("../middleware/BearerTokenMiddleware");
+const { authenticateToken, authorizeRole} = require("../middleware/BearerTokenMiddleware");
 const  UpdateSensorController  = require('../controllers/logs/UpdateSensorController');
 
 // Sensör ekleme ve tür ekleme
-router.post('/add-new-type', authenticateToken, sensorsController.addNewType);
+router.post('/add-new-type', authenticateToken,authorizeRole(['administrator']), sensorsController.addNewType);
 
-router.post('/sensors', authenticateToken, sensorsController.addSensors);
+router.post('/sensors', authenticateToken, authorizeRole(['administrator','manager']), sensorsController.addSensors);
 
 // Sensör türlerini alma
 router.get('/type', authenticateToken, sensorsController.getTypes);
