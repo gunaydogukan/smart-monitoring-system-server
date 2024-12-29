@@ -378,27 +378,46 @@ const withOutComapnyCodegetUndefinedUsersAndActiveManagers = async (req, res) =>
 const assignPersonalsToManager = async (req, res) => {
     const { managerId, personalIds } = req.body;
 
-    if (!managerId || !Array.isArray(personalIds) || personalIds.length === 0) {
-        return res.status(400).json({ message: "Eksik veya geçersiz parametreler." });
+    // Gelen verileri loglayarak kontrol edelim
+    console.log("Gelen managerId:", managerId);
+    console.log("Gelen personalIds:", personalIds);
+
+    // Gelen verinin türünü ve değerlerini kontrol et
+    if (
+        !managerId ||
+        isNaN(parseInt(managerId, 10)) || // managerId'nin geçerli bir sayı olup olmadığını kontrol et
+        !Array.isArray(personalIds) ||
+        personalIds.length === 0 ||
+        personalIds.some((id) => typeof id !== "number") // Tüm personel ID'lerinin sayısal olduğunu kontrol et
+    ) {
+        return res
+            .status(400)
+            .json({ message: "Eksik veya geçersiz parametreler." });
     }
 
     try {
+        console.log("Doğrulanmış managerId:", managerId);
+        console.log("Doğrulanmış personalIds:", personalIds);
+
+        // `managerId`'yi kesinlikle bir tamsayıya çevir
+        const validatedManagerId = parseInt(managerId, 10);
+
         // Eski durum için verileri kaydet (log için)
         const oldPersonals = await User.findAll({
             where: {
                 id: personalIds,
-                role: 'personal',
+                role: "personal", // Sadece personel rolü
             },
-            attributes: ['id', 'creator_id'],
+            attributes: ["id", "creator_id"],
         });
 
         // Personellerin creator_id'sini güncelle
         await User.update(
-            { creator_id: managerId },
+            { creator_id: validatedManagerId },
             {
                 where: {
                     id: personalIds,
-                    role: 'personal', // Sadece personel rolü
+                    role: "personal", // Sadece personel rolü
                 },
             }
         );
@@ -414,25 +433,29 @@ const assignPersonalsToManager = async (req, res) => {
         const newPersonals = await User.findAll({
             where: {
                 id: personalIds,
-                role: 'personal',
+                role: "personal",
             },
-            attributes: ['id', 'creator_id'],
+            attributes: ["id", "creator_id"],
         });
 
         // Log kaydı oluştur
         await UserLog.create({
-            userId: managerId,
+            userId: validatedManagerId,
             oldData: JSON.stringify(oldPersonals),
             newData: JSON.stringify(newPersonals),
-            action: 'assign_personals_to_manager',
+            action: "assign_personals_to_manager",
         });
 
+        // Başarılı yanıt döndür
         res.status(200).json({ message: "Personeller başarıyla atandı." });
     } catch (error) {
         console.error("Atama sırasında hata:", error);
-        res.status(500).json({ message: "Personeller atanırken bir hata oluştu.", error });
+        res
+            .status(500)
+            .json({ message: "Personeller atanırken bir hata oluştu.", error });
     }
 };
+
 
 
 const assignManager = async (req, res) => {
