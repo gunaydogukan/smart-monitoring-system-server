@@ -13,9 +13,6 @@ router.post('/login', userController.login);
 // Address ekleme: Tüm yetkili kullanıcılar
 router.post('/address', authenticateToken, userController.addAddress);
 
-// Companies ekleme: Tüm yetkili kullanıcılar
-router.post('/companies', authenticateToken, userController.addCompanies);
-
 // Manager ekleme: Sadece administrator yetkisi
 router.post('/manager', authenticateToken, authorizeRole(['administrator']), userController.addManager);
 
