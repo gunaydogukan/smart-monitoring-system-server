@@ -322,14 +322,17 @@ async function isActiveForIP(req, res) {
 
 
 const assignSensorsToUser = async (req, res) => {
-    const { sensorIds, managerIds } = req.body;
+    const { sensorIds, userIds, role } = req.body;
 
     // Validation: Gelen veriler kontrol edilir
     if (!sensorIds || !Array.isArray(sensorIds) || sensorIds.length === 0) {
         return res.status(400).json({ message: 'Lütfen en az bir sensör seçin!' });
     }
-    if (!managerIds || !Array.isArray(managerIds) || managerIds.length === 0) {
-        return res.status(400).json({ message: 'Lütfen en az bir yönetici seçin!' });
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+        return res.status(400).json({ message: 'Lütfen en az bir kullanıcı seçin!' });
+    }
+    if (!role || (role !== 'manager' && role !== 'personal')) {
+        return res.status(400).json({ message: 'Geçersiz rol!' });
     }
 
     try {
@@ -337,14 +340,14 @@ const assignSensorsToUser = async (req, res) => {
         const existingAssignments = await SensorsOwner.findAll({
             where: {
                 sensor_id: sensorIds,
-                sensor_owner: managerIds,
+                sensor_owner: userIds,
             },
         });
 
         // Mevcut ilişkileri bir Set olarak al
         const existingPairs = new Set(
             existingAssignments.map(
-                (assignment) => `${assignment.sensor_id}-${assignment.sensor_owner}`
+                (assignment) => `${assignment.sensor_id}-${assignment.sensor_owner}-${assignment.role}`
             )
         );
 
@@ -352,20 +355,21 @@ const assignSensorsToUser = async (req, res) => {
         const assignmentsToAdd = [];
         const logsToAdd = []; // Logları tutacak dizi
         sensorIds.forEach((sensorId) => {
-            managerIds.forEach((managerId) => {
-                const pairKey = `${sensorId}-${managerId}`;
+            userIds.forEach((userId) => {
+                const pairKey = `${sensorId}-${userId}-${role}`;
                 if (!existingPairs.has(pairKey)) {
                     assignmentsToAdd.push({
-                        sensor_owner: managerId,
+                        sensor_owner: userId,
                         sensor_id: sensorId,
+                        role: role,
                     });
 
                     // Log için ekle
                     logsToAdd.push({
                         sensorId,
-                        oldData: JSON.stringify({ sensor_owner: null }), // Eski veri
-                        newData: JSON.stringify({ sensor_owner: managerId }), // Yeni veri
-                        action: 'yöneticiye_sensor_tanımlama',
+                        oldData: JSON.stringify({ sensor_owner: null, role: null }), // Eski veri
+                        newData: JSON.stringify({ sensor_owner: userId, role: role }), // Yeni veri
+                        action: `${role}_sensor_tanımlama`,
                     });
                 }
             });
@@ -384,7 +388,7 @@ const assignSensorsToUser = async (req, res) => {
         res.status(200).json({
             message:
                 assignmentsToAdd.length > 0
-                    ? 'Sensörler ve yöneticiler başarıyla atanmıştır!'
+                    ? `Sensörler başarıyla ${role}lara atanmıştır!`
                     : 'Tüm sensörler zaten atanmıştı.',
         });
     } catch (error) {
