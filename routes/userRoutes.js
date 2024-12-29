@@ -63,5 +63,6 @@ const UpdateSensorController = require('../controllers/logs/UpdateSensorControll
 router.post('/user/sensor-operations', authenticateToken,
     UpdateSensorController.handleSensorOperations);
 
-router.get("/company/:companyCode/managers", authenticateToken,userController.getActiveManagersByCompany)
+router.get("/company/:companyCode/users", authenticateToken, userController.getUsersByRoleAndCompany);
+
 module.exports = router;

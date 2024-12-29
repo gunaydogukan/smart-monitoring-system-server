@@ -625,34 +625,65 @@ const getUserCount = async (req, res) => {
     res.status(200).json(result);
 };
 
-const getActiveManagersByCompany = async (req, res) => {
-    const { companyCode } = req.params;
+const getUsersByRoleAndCompany = async (req, res) => {
+    const { companyCode } = req.params; // Şirket kodu parametreden alınıyor
+    const role = req.query.role; // Role bilgisi query parametresinden alınıyor (manager veya personal)
+
+    if (!role) {
+        return res.status(400).json({ message: "Role parametresi eksik." });
+    }
 
     try {
-        // Managers'ları companyCode, role ve isActive'ye göre sorguluyoruz
-        const managers = await User.findAll({
+        // Kullanıcıları belirtilen role ve şirket koduna göre sorguluyoruz
+        const users = await User.findAll({
             where: {
                 companyCode: companyCode,
-                role: 'manager', // Sadece manager'lar
-                isActive: true, // Yalnızca aktif yöneticiler
+                role: role,
+                isActive: true, // Sadece aktif kullanıcılar
             },
-            attributes: ['id', 'name', 'lastname', 'email'], // Döndürülecek alanlar
+            attributes: ['id', 'name', 'lastname', 'email', 'creator_id'], // Geri döndürülecek alanlar
         });
 
-        if (!managers || managers.length === 0) {
-            return res.status(404).json({ message: 'Aktif yönetici bulunamadı.' });
+        if (!users || users.length === 0) {
+            return res.status(404).json({ message: `Aktif ${role} bulunamadı.` });
         }
 
-        // Yöneticileri döndürüyoruz
-        res.status(200).json({ success: true, managers });
+        let result = users;
+
+        // Eğer role "personal" ise, creator_id ile eşleşen manager bilgilerini ekliyoruz
+        if (role === "personal") {
+            const creatorIds = [...new Set(users.map((user) => user.creator_id))];
+
+            // Manager'ları creator_id'ye göre sorgulama
+            const managers = await User.findAll({
+                where: {
+                    id: creatorIds,
+                    role: "manager",
+                },
+                attributes: ['id', 'name', 'lastname', 'email'], // Geri döndürülecek alanlar
+            });
+
+            const managerMap = managers.reduce((map, manager) => {
+                map[manager.id] = manager;
+                return map;
+            }, {});
+
+            result = users.map((user) => ({
+                ...user.toJSON(),
+                manager: managerMap[user.creator_id] || null, // Eğer manager yoksa null
+            }));
+        }
+        console.log()
+
+        res.status(200).json({ success: true, users: result });
     } catch (error) {
-        console.error('Manager verisi çekilemedi:', error);
-        res.status(500).json({ error: 'Yöneticiler verisi çekilemedi. Lütfen tekrar deneyin.' });
+        console.error("Kullanıcı verisi çekilemedi:", error);
+        res.status(500).json({ message: "Kullanıcı verisi çekilemedi. Lütfen tekrar deneyin." });
     }
-}
+};
 
 
-module.exports = {getActiveManagersByCompany, register, login, addAddress ,addCompanies , addManager ,addPersonal,getCompanies,getCities, getProfile,getUsers,getManagersByCompany,getPersonalsByCompany,getUserCount};
+module.exports = {getUsersByRoleAndCompany, register, login, addAddress ,addCompanies , addManager ,addPersonal,getCompanies,getCities, getProfile,getUsers,getManagersByCompany,getPersonalsByCompany,getUserCount};
 
 
 
