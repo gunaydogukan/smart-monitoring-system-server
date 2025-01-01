@@ -267,7 +267,6 @@ const getUserOwnedSensors = async (userId) => {
         }
 
         const sensors = await getSensorsByIds(sensorIds);
-
         return {
             personal,
             sensors
