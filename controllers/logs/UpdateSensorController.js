@@ -347,7 +347,7 @@ const assignSensorsToUser = async (req, res) => {
         // Mevcut ilişkileri bir Set olarak al
         const existingPairs = new Set(
             existingAssignments.map(
-                (assignment) => `${assignment.sensor_id}-${assignment.sensor_owner}-${assignment.role}`
+                (assignment) => `${assignment.sensor_id}-${assignment.sensor_owner}-${role}` //assigment.role 'yi sadece role olarak değiştirdim.
             )
         );
 
@@ -389,7 +389,7 @@ const assignSensorsToUser = async (req, res) => {
             message:
                 assignmentsToAdd.length > 0
                     ? `Sensörler başarıyla ${role}lara atanmıştır!`
-                    : 'Tüm sensörler zaten atanmıştı.',
+                    : 'Seçilen sensörler zaten atanmıştı.', //Tüm yazısını İlgili olarak değiştirdim
         });
     } catch (error) {
         console.error('Error assigning sensors:', error);
