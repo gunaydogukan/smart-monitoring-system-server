@@ -29,10 +29,12 @@ sequelize
     //.sync({ alter: true })
     .authenticate()
     .then(() => {
+
         console.log('Veritabanı ve tablolar başarıyla senkronize edildi.');
         app.listen(port, () => {
             console.log(`sunucu ${port} unda çalışıyor`)
         })
+
     })
     .catch((error) => {
         console.error('Veritabanı senkronizasyon hatası:', error);
