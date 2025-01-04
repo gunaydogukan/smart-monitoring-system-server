@@ -108,9 +108,9 @@ const addOwner = async (managerId, sensorId) => {
 
 //Burada yeni sensör tipi ekleme işlemi yapılır
 const addNewType = async (req,res) =>{
-
     try{
         const user = req.user;
+        console.log(user);
         if( (user.role==="personal" || user.role==="manager") || !user){
             return res.status(400).json({ message: 'Bu işlemi yapmaya yetkiniz yoktur. Lütfen yetkili birisine ulaşınız' });
         } //type eklemeyi sadece admin
