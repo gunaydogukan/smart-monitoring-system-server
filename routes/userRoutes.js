@@ -11,7 +11,7 @@ router.post('/register', authenticateToken, authorizeRole(['administrator','mana
 router.post('/login', userController.login);
 
 // Address ekleme: Tüm yetkili kullanıcılar
-router.post('/address', authenticateToken, userController.addAddress);
+router.post('/address', authenticateToken,authorizeRole(['administrator','manager']) ,userController.addAddress);
 
 // Manager ekleme: Sadece administrator yetkisi
 router.post('/manager', authenticateToken, authorizeRole(['administrator']), userController.addManager);
@@ -21,6 +21,23 @@ router.post('/personal', authenticateToken, authorizeRole(['manager', 'administr
 
 //Compnay ekleme , sadece admin bu işlemi yapabilir
 router.post('/companies', authenticateToken, authorizeRole(['administrator']), userController.addCompanies);
+
+// Personelleri yeni bir manager'e atama
+router.post('/assign-personals',authorizeRole(['administrator','manager']) ,authenticateToken,
+    UpdateUserController.assignPersonalsToManager
+);
+
+router.post("/assign-manager",authenticateToken, authorizeRole(['administrator']),
+    UpdateUserController.assignManager);
+
+const UpdateSensorController = require('../controllers/logs/UpdateSensorController');
+router.post('/user/sensor-operations', authenticateToken,
+    UpdateSensorController.handleSensorOperations);
+
+router.put('/update', authenticateToken, UpdateUserController.updateUser);
+router.put('/modifyuser', authenticateToken, UpdateUserController.modifyUserDetails);
+router.patch('/:id/deactivate', authenticateToken, UpdateUserController.deactivateUser);
+router.patch('/:id/activate', authenticateToken, UpdateUserController.activateUser);
 
 
 // Token doğrulama endpoint'i
@@ -32,36 +49,21 @@ router.get('/cities', authenticateToken, userController.getCities); // Şehirler
 
 router.get('/profile', authenticateToken, userController.getProfile);
 
-router.get('/companies', authenticateToken, userController.getCompanies);
+router.get('/companies', authenticateToken, authorizeRole(['administrator']),userController.getCompanies);
 
 //kullanıcı görüntüleme işlerini sadece manager ve admin yapabilir
-router.get('/users',authenticateToken,userController.getUsers);
-router.get('/managers',authenticateToken,userController.getManagersByCompany);
-router.get('/personals',authenticateToken,userController.getPersonalsByCompany);
+router.get('/users',authenticateToken,authorizeRole(['administrator','manager']),userController.getUsers);
+router.get('/managers',authenticateToken,authorizeRole(['administrator']),userController.getManagersByCompany);
+router.get('/personals',authenticateToken,authorizeRole(['administrator','manager']),userController.getPersonalsByCompany);
 
 //Kurumlar'ın gösterildiği bölümde , kullanıcı sayıları ve sensör sayıları'da gözükür.
-router.get('/companiesCount',authenticateToken,userController.getUserCount)
-router.put('/update', authenticateToken, UpdateUserController.updateUser);
-router.put('/modifyuser', authenticateToken, UpdateUserController.modifyUserDetails);
-router.patch('/:id/deactivate', authenticateToken, UpdateUserController.deactivateUser);
-router.patch('/:id/activate', authenticateToken, UpdateUserController.activateUser);
+router.get('/companiesCount',authenticateToken,authorizeRole(['administrator']),userController.getUserCount)
 
 router.get('/company/:companyCode/undefined-users-and-managers', authenticateToken,
     UpdateUserController.getUndefinedUsersAndActiveManagers);
 
 router.get('/users/undefined-users-and-managers', authenticateToken,
     UpdateUserController.withOutComapnyCodegetUndefinedUsersAndActiveManagers);
-
-// Personelleri yeni bir manager'e atama
-router.post('/assign-personals', authenticateToken,
-    UpdateUserController.assignPersonalsToManager
-);
-router.post("/assign-manager",authenticateToken,
-UpdateUserController.assignManager);
-
-const UpdateSensorController = require('../controllers/logs/UpdateSensorController');
-router.post('/user/sensor-operations', authenticateToken,
-    UpdateSensorController.handleSensorOperations);
 
 router.get("/company/:companyCode/users", authenticateToken, userController.getUsersByRoleAndCompany);
 

@@ -1,7 +1,9 @@
 const bcrypt = require('bcrypt');
 const User = require('../../models/users/User'); // User modeli
 const UserLog = require('../../models/logging/userLog'); // Log modeli
+const SensorLogs = require('../../models/logging/sensorsLog'); // Log modeli
 const UndefinedUser = require('../../models/users/Undefined_users');
+const sensorOwner = require('../../models/sensors/sensorOwner');
 const updateUser = async (req, res) => {
     const { id } = req.user; // Kimlik doğrulama sonrası gelen kullanıcı ID
     const { name, lastname, email, phone, password } = req.body; // Güncellenmek istenen veriler
@@ -375,6 +377,7 @@ const withOutComapnyCodegetUndefinedUsersAndActiveManagers = async (req, res) =>
 };
 
 
+//tanımsız personel tanımlama işlemi
 const assignPersonalsToManager = async (req, res) => {
     const { managerId, personalIds } = req.body;
 
@@ -456,11 +459,9 @@ const assignPersonalsToManager = async (req, res) => {
     }
 };
 
-
-
+//yönetici değiştir
 const assignManager = async (req, res) => {
     const { personalId, managerId } = req.body;
-
     // Gerekli alanların gönderildiğini kontrol et
     if (!personalId || !managerId) {
         return res.status(400).json({ message: "Eksik veya geçersiz parametreler." });
@@ -479,13 +480,39 @@ const assignManager = async (req, res) => {
             return res.status(404).json({ message: "Yönetici bulunamadı veya geçersiz bir role sahip." });
         }
 
+        // personelin sensörlerini bulur
+        const ownerSensors = await sensorOwner.findAll({
+            where: {
+                sensor_owner: personalId, // Düzeltme: sensor_owner doğru sütun adı olmalı
+            },
+        });
+        //eski sensör verisin kaydet (log için)
+        const oldSensorData = ownerSensors.map(sensor => ({
+            sensor_id: sensor.sensor_id,
+            sensor_owner: sensor.sensor_owner,
+        }));
+
         // Eski verileri kaydet (log için)
         const oldData = {
             creator_id: personal.creator_id,
         };
 
+        //personelin sensorOwner tablosunda ait olan tüm sensörleri silinir.
+        await sensorOwner.destroy({
+            where: {
+                sensor_owner : personalId,
+            }
+        });
+
+        //yeni sensör verileri kaydedilir.
+        const newSensorData = oldSensorData.map(sensor=>({
+            sensor_id:sensor.sensor_id,
+            sensorOwner:null,
+        }));
+
         // Personelin `creator_id` alanını güncelle
         await personal.update({ creator_id: managerId });
+
 
         // Yeni verileri al (log için)
         const newData = {
@@ -500,6 +527,21 @@ const assignManager = async (req, res) => {
             action: 'assign_manager',
         });
 
+        //sensör Log kaydı oluştulur
+        const sensorDataLog = oldSensorData.map((oldSensor,index) =>{
+            const newSensor = newSensorData[index];
+
+            return SensorLogs.create({
+                sensorId: oldSensor.sensor_id, // Sensör ID
+                oldData: JSON.stringify(oldSensor), // Eski sensör verilerini JSON'a çevir
+                newData: JSON.stringify(newSensor), // Yeni sensör verilerini JSON'a çevir
+                action: 'Yeni Menejer ataması.', // İşlem türü (örnek: 'update')
+            })
+
+        });
+
+        await Promise.all(sensorDataLog);
+
         res.status(200).json({
             message: "Personel başarıyla yeni yöneticiye atandı.",
             personal,
@@ -509,8 +551,6 @@ const assignManager = async (req, res) => {
         res.status(500).json({ message: "Yönetici atanırken bir hata oluştu.", error });
     }
 };
-
-
 
 
 module.exports = { updateUser ,modifyUserDetails,

@@ -9,6 +9,10 @@ router.post('/add-new-type', authenticateToken,authorizeRole(['administrator']),
 
 router.post('/sensors', authenticateToken, authorizeRole(['administrator','manager']), sensorsController.addSensors);
 
+router.post('/assign-random-sensors', authenticateToken, UpdateSensorController.assignSensorsToUser);
+
+router.post('/sensors-assign' ,authenticateToken,UpdateSensorController.assignSensorsToManager)
+
 // Sensör türlerini alma
 router.get('/type', authenticateToken, sensorsController.getTypes);
 
@@ -20,10 +24,6 @@ router.get('/user-sensors', authenticateToken, sensorsController.getUserSensors)
 
 router.get('/undefined-sensors', authenticateToken, UpdateSensorController.fetchUndefinedSensors);
 
-router.post('/sensors-assign' ,authenticateToken,UpdateSensorController.assignSensorsToManager)
-
 router.get("/company/:companyCode/sensors", authenticateToken, sensorsController.getSensorsByCompany);
-
-router.post('/assign-random-sensors', authenticateToken, UpdateSensorController.assignSensorsToUser);
 
 module.exports = router;
