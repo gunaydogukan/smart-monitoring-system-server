@@ -49,7 +49,7 @@ router.get('/cities', authenticateToken, userController.getCities); // Şehirler
 
 router.get('/profile', authenticateToken, userController.getProfile);
 
-router.get('/companies', authenticateToken, authorizeRole(['administrator']),userController.getCompanies);
+router.get('/companies', authenticateToken, authorizeRole(['administrator','manager']),userController.getCompanies);
 
 //kullanıcı görüntüleme işlerini sadece manager ve admin yapabilir
 router.get('/users',authenticateToken,authorizeRole(['administrator','manager']),userController.getUsers);
