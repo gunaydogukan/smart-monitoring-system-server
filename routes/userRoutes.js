@@ -23,11 +23,11 @@ router.post('/personal', authenticateToken, authorizeRole(['manager', 'administr
 router.post('/companies', authenticateToken, authorizeRole(['administrator']), userController.addCompanies);
 
 // Personelleri yeni bir manager'e atama
-router.post('/assign-personals',authorizeRole(['administrator','manager']) ,authenticateToken,
+router.post('/assign-personals',authenticateToken,authorizeRole(['administrator','manager']) ,
     UpdateUserController.assignPersonalsToManager
 );
 
-router.post("/assign-manager",authenticateToken, authorizeRole(['administrator']),
+router.post("/assign-manager",authenticateToken, authorizeRole(['administrator','manager']),
     UpdateUserController.assignManager);
 
 const UpdateSensorController = require('../controllers/logs/UpdateSensorController');
@@ -49,7 +49,7 @@ router.get('/cities', authenticateToken, userController.getCities); // Şehirler
 
 router.get('/profile', authenticateToken, userController.getProfile);
 
-router.get('/companies', authenticateToken, authorizeRole(['administrator']),userController.getCompanies);
+router.get('/companies', authenticateToken, authorizeRole(['administrator','manager']),userController.getCompanies);
 
 //kullanıcı görüntüleme işlerini sadece manager ve admin yapabilir
 router.get('/users',authenticateToken,authorizeRole(['administrator','manager']),userController.getUsers);

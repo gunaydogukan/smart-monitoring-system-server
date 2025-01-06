@@ -44,10 +44,9 @@ async function updateSensor(req, res) {
     }
 }
 
-
 const handleSensorOperations = async (req, res) => {
     const { userId, role, companyCode } = req.body;
-
+    console.log("user ıd ",userId,role,companyCode);
     try {
         if (!userId || !role || !companyCode) {
             return res.status(400).json({ message: "Eksik parametreler. userId, role ve companyCode gerekli." });
@@ -106,14 +105,17 @@ const handleSensorOperations = async (req, res) => {
                     timestamp: new Date(),
                 });
             }
-        } else if (role === "personal") {
+        }
+        else if (role === "personal") {
             const relatedSensors = await SensorsOwner.findAll({
                 where: { sensor_owner: userId },
             });
 
             for (const sensor of relatedSensors) {
                 await SensorsOwner.destroy({
-                    where: { sensor_id: sensor.sensor_id },
+                    where: { sensor_id: sensor.sensor_id,
+                            sensor_owner:userId,
+                    },
                 });
 
                 await SensorLogs.create({
@@ -207,8 +209,6 @@ const fetchUndefinedSensors = async (req, res) => {
     }
 };
 
-
-
 const assignSensorsToManager = async (req, res) => {
     const { managerId, sensorIds } = req.body;  // Gelen body'den managerId ve sensorIds
 
@@ -279,8 +279,6 @@ const assignSensorsToManager = async (req, res) => {
     }
 };
 
-
-
 //Gelen ip'ye göre otomatik aktif pasiflik değişimi
 async function isActiveForIP(req, res) {
     const sensorId = req.params.id;
@@ -318,8 +316,6 @@ async function isActiveForIP(req, res) {
         });
     }
 }
-
-
 
 const assignSensorsToUser = async (req, res) => {
     const { sensorIds, userIds, role } = req.body;
