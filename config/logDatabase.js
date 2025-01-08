@@ -1,7 +1,13 @@
 const { Sequelize } = require('sequelize');
-//Sensor IP logs managment system
-const sequelize = new Sequelize('log_smart_monitoring_system_db', 'root', 'dogukan1903', {
-    host: 'localhost',
+
+require('dotenv').config();
+const dbHost = process.env.DB_HOST;
+const dbUser = process.env.DB_USER;
+const dbPassword = process.env.DB_PASSWORD;
+const dbName = process.env.DB_NAME_logDatabase;
+
+const sequelize = new Sequelize(dbName, dbUser, dbPassword, {
+    host: dbHost,
     dialect: 'mysql',
     timezone: '+03:00',
 });

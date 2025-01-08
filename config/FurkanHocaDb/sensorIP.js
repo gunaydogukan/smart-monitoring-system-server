@@ -1,7 +1,13 @@
 const { Sequelize } = require('sequelize');
 
-const sequelize = new Sequelize('sensorIP', 'bitirmeproje', 'Bitirme74Projesi74!', {
-    host: '193.255.91.36',
+require('dotenv').config();
+const dbHost = process.env.DB_HOST_FurkanHoca;
+const dbUser = process.env.DB_USER_FurkanHoca;
+const dbPassword = process.env.DB_PASSWORD_FurkanHoca;
+const dbName = process.env.DB_NAME_FurkanHoca_sensorIP;
+
+const sequelize = new Sequelize( dbName, dbUser, dbPassword, {
+    host: dbHost,
     dialect: 'mysql',
     timezone: '+03:00',
 });

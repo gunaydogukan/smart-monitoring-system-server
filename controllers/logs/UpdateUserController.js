@@ -102,9 +102,9 @@ const modifyUserDetails = async (req, res) => {
 // Kullanıcıyı pasif duruma getirme
 const deactivateUser = async (req, res) => {
     const { id } = req.params;
-
     try {
         const user = await User.findByPk(id);
+        console.log("asdasdasdaasasd",user);
         if (!user) {
             return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
         }
@@ -130,7 +130,6 @@ const deactivateUser = async (req, res) => {
                     action: 'deactivate_personal',
                 });
             }
-
 
             return res.status(200).json({
                 message: 'Kullanıcı başarıyla pasif hale getirildi.',
