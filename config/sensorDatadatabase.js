@@ -1,5 +1,5 @@
 const { Sequelize } = require('sequelize');
-//Sensör data'ları bu database'de saklanacak
+//Sensör data'ları bu database'de saklanacak // kullanılmıyo...
 const sequelize = new Sequelize('sensor_data', 'root', 'vgzlGya9nIEHKv9', {
     host: 'localhost',
     dialect: 'mysql',
