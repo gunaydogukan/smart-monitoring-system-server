@@ -1,13 +1,8 @@
 const { Sequelize } = require('sequelize');
 
-require('dotenv').config();
-const dbHost = process.env.DB_HOST;
-const dbUser = process.env.DB_USER;
-const dbPassword = process.env.DB_PASSWORD;
-const dbName = process.env.DB_NAME_database;
+const sequelize = new Sequelize('smart_monitoring_system_db', 'root', 'vgzlGya9nIEHKv9', {
 
-const sequelize = new Sequelize(dbName, dbUser, dbPassword, {
-    host: dbHost,
+    host: 'localhost',
     dialect: 'mysql',
     timezone: '+03:00',
 });

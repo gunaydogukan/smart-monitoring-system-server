@@ -38,18 +38,8 @@ const getSensorIdsByOwner = async (userId) => {
     return ownedSensors.map(sensor => sensor.sensor_id); // ID'leri liste olarak döndür
 };
 
-const getSensorByOwner= async (userId,sensorId) => {
-    const ownedSensors = await SensorOwner.findAll({
-        where:{sensor_owner: userId, sensor_id:sensorId},
-        attributes: ['sensor_owner', 'sensor_id'],
-    });
-
-    return ownedSensors;
-}
-
 module.exports = {
     getAllSensors,
     getSensorsByIds,
     getSensorIdsByOwner,
-    getSensorByOwner
 };

@@ -5,7 +5,7 @@ const Companies = require('../models/users/Companies');
 const Users = require('../models/users/User');
 const { SensorData } = require("../models/sensors/SensorsData"); //sensor data table'a eklemek için
 const IPLogger = require("../models/logs/IPLog");  //sensör eklendiğinde sensor dataCodu ıpLog table'ına atılır ve ilk ip null olarak gider
-const { getAllSensors,getSensorIdsByOwner,getSensorsByIds,getSensorByOwner} = require('../services/sensorServices');
+const { getAllSensors,getSensorIdsByOwner,getSensorsByIds} = require('../services/sensorServices');
 
 const addSensors = async (req, res) => {
     try {
@@ -243,15 +243,14 @@ const getManagerSensors = async (userId) => {
 
     const sensorIds = await getSensorIdsByOwner(manager.id);
     const managerSensors = await getSensorsByIds(sensorIds);
-    const sensorOwners = await getSensorByOwner(userId,sensorIds);
-
     const personalSensors = await Promise.all(
         personals.map(async (personal) => {
             const sensors = await getUserOwnedSensors(personal.id);
             return { personalId: personal.id, sensors };
         })
     );
-    return{ manager,personals,managerSensors,sensorOwners,personalSensors};
+    console.log(personalSensors);
+    return{ manager,personals,managerSensors,personalSensors};
 };
 
 const getUserOwnedSensors = async (userId) => {
