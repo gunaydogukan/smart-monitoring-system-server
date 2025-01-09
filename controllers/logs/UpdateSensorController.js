@@ -7,7 +7,7 @@ const {Op} = require("sequelize");
 const Users = require('../../models/users/User');
 const Sequelize = require('sequelize');
 const sequelize = require('../../config/database'); // Veritabanı bağlantısı
-// Sensör güncelleme fonksiyonu
+
 async function updateSensor(req, res) {
     const sensorId = req.params.id; // Güncellenecek sensörün ID'si
     const updatedData = req.body; // Yeni veriler
@@ -393,8 +393,75 @@ const assignSensorsToUser = async (req, res) => {
     }
 };
 
+const removeSensors = async (req, res) => {
+    const { sensorIds, userIds, role } = req.body;
+    if (!userIds || !Array.isArray(sensorIds) || sensorIds.length === 0) {
+        return res.status(400).json({ error: "Sensör veya kullanıcı bulunamadı (removeSensors metot)" });
+    }
+
+    try {
+        // Kullanıcıları bul
+        const users = await Users.findAll({ where: { id: { [Op.in]: userIds } } });
+        if (!users || users.length === 0) {
+            return res.status(404).json({ error: "Kullanıcılar bulunamadı." });
+        }
+
+        let id = userIds;
+        let personals = [];
+        if (role === "manager") {
+            //eğer sensör çıkartılan kişi manager ise onun sahip olduğu personelleri bulunur ve çıkartılır.
+            personals = await Users.findAll({
+                where: { creator_id: { [Op.in]: userIds } },
+            });
+            const personalIds = personals.map((personal) => personal.id);
+            id = [...id, ...personalIds]; // Birleşik ID dizisi
+        }
+        console.log("kullanıcı id'leri ",id)
+        //sensörler kime sahipse onların hepisin getirir
+        const sensorsToRemove = await SensorsOwner.findAll({
+            where: {
+                sensor_owner: { [Op.in]: id },
+                sensor_id: { [Op.in]: sensorIds },
+            },
+        });
+        console.log("sİLİNECEK SENSÖRler = ",sensorsToRemove);
+
+        if (!sensorsToRemove || sensorsToRemove.length === 0) {
+            return res.status(404).json({ error: "Silinecek sensörler bulunamadı." });
+        }
+
+        const logsToAdd = sensorsToRemove.map((sensor) => ({
+            sensorId: sensor.id,
+            oldData: JSON.stringify(sensor),
+            newData: JSON.stringify({ owner_id: null, role: null }),
+            action: `Sensor Remove ${req.user.role}`, // İşlem türü
+        }));
+
+        //sensör bilgileri silinir.
+        const removedCount = await SensorsOwner.destroy({
+            where: {
+                sensor_owner: { [Op.in]: id },
+                sensor_id: { [Op.in]: sensorIds },
+            },
+        });
+        console.log("silinen sensörlersayısı = ",removedCount);
+        // Logları kaydet
+        if (logsToAdd.length > 0) {
+            await SensorLogs.bulkCreate(logsToAdd);
+        }
+
+        return res.status(200).json({
+            message: "Sensörler başarıyla kaldırıldı.",
+            removedCount,
+        });
+    } catch (error) {
+        console.error("Sensör kaldırılırken hata (removeSensors metot):", error);
+        res.status(500).json({ error: "Sensörleri kaldırırken bir hata oluştu (removeSensors metot)." });
+    }
+};
+
 
 module.exports = {
     updateSensor,handleSensorOperations,fetchUndefinedSensors,assignSensorsToManager,
-    isActiveForIP,assignSensorsToUser,
+    isActiveForIP,assignSensorsToUser,removeSensors
 };

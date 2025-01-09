@@ -315,5 +315,29 @@ const getSensorsByCompany = async (req, res) => {
     }
 };
 
-module.exports = { addNewType, addSensors, getTypes,getUserSensors ,getSensorsByCompany};
+const getOwnerSensors = async (req, res) => {
+    const { userIds } = req.query; // Gelen kullanıcı ID'leri (query parametresi)
+
+    console.log("Gelen userIds:", userIds); // Gelen parametreyi kontrol et
+
+    if (!userIds) {
+        return res.status(400).json({ error: "Geçerli kullanıcı kimlikleri sağlanmalıdır." });
+    }
+
+    try {
+
+        let sensors = await getSensorIdsByOwner(userIds);
+        sensors = await getSensorsByIds(sensors);
+
+        return res.status(200).json({ sensors });
+    } catch (error) {
+        console.error("Sensör sorgulama hatası:", error);
+        return res.status(500).json({ error: "Sensörler alınırken bir hata oluştu." });
+    }
+};
+
+
+
+
+module.exports = { addNewType, addSensors, getTypes,getUserSensors ,getSensorsByCompany,getOwnerSensors};
 
