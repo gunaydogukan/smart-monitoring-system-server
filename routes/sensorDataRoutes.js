@@ -9,4 +9,6 @@ router.get('/sensor-data',authenticateToken,sensorsDataController.getSensorData)
 // Sensör verisi eklemek için endpoint
 //router.post('/sensor-data',authenticateToken,sensorsDataController.addSensorData);
 
+router.get('/soil-moisture-map', authenticateToken, sensorsDataController.getSoilMoistureData);
+
 module.exports = router;
