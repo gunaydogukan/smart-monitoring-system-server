@@ -2,9 +2,112 @@ const sensorData = require("../config//FurkanHocaDb/sensorDataDb");
 const LastSensorData = require('../models/logs/LastSensorData');
 const Sequelize = require("sequelize");
 const { Op } = require('sequelize');
-
+const Sensors = require("../models/sensors/Sensors");
 // Tablo sütunlarını dinamik olarak almak için yardımcı fonksiyon
 //Bunu kullanmamızın sebebi nem'in diğerlerinden fazla sütunu oldugu için
+
+// Nem Yüzdesi Hesaplama Fonksiyonu
+let minValue = 0;
+let maxValue = 100;
+const calculateAverageHumidity = (sagustNem, sagaltNem, solaltNem, minValue, maxValue) => {
+    // -9998 ve -9999 değerlerini filtrele ve sayıya çevir
+    const validValues = [sagustNem, sagaltNem, solaltNem]
+        .map((value) => parseFloat(value))
+        .filter((value) => value !== -9998 && value !== -9999 && !isNaN(value));
+
+    // Geçerli değerlerin ortalamasını al
+    if (validValues.length > 0) {
+        const total = validValues.reduce((sum, value) => sum + value, 0);
+        const average = total / validValues.length;
+
+        // Ortalamayı yüzdelik değere çevir
+        const percentage = ((average - minValue) / (maxValue - minValue)) * 100;
+
+        // Yüzdelik değeri 0 ile 100 arasında sınırla
+        return Math.min(Math.max(percentage, 0), 100);
+    }
+    return 0; // Geçerli değer yoksa 0 döndür
+};
+
+const getSoilMoistureData = async (req, res) => {
+    try {
+        // 1. Sensors Tablosundan type = 1 Olanları Al
+        const sensors = await Sensors.findAll({
+            where: { type: 1 },
+            attributes: ['datacode', 'lat', 'lng', 'name'], // Gerekli kolonları al
+        });
+
+        if (!sensors || sensors.length === 0) {
+            return res.status(404).json({ error: 'Hiç sensör bulunamadı.' });
+        }
+
+        // 2. Her Sensör için Veriyi Al ve Yüzdelik Hesapla
+        const results = await Promise.all(
+            sensors.map(async (sensor) => {
+                const { datacode, lat, lng, name } = sensor;
+
+                try {
+                    // Datacode'e Göre Tablo Sorgula
+                    const query = `
+                        SELECT sagustNem, sagaltNem, solaltNem, time
+                        FROM \`${datacode}\`
+                        ORDER BY time DESC
+                            LIMIT 288
+                    `;
+                    const rawData = await sensorData.query(query, {
+                        type: Sequelize.QueryTypes.SELECT,
+                    });
+
+                    // Eğer veri yoksa sensörü atla
+                    if (!rawData || rawData.length === 0) {
+                        return null;
+                    }
+
+                    // Ham Veriyi Yüzdelik Hesapla
+                    const processedData = rawData.map((data) => ({
+                        time: data.time,
+                        humidity: calculateAverageHumidity(
+                            data.sagustNem,
+                            data.sagaltNem,
+                            data.solaltNem,
+                           minValue,
+                            maxValue
+                        ),
+                    }));
+
+                    // Sensör Bilgisiyle Birleştir
+                    return {
+                        datacode,
+                        name, // Sensör adı
+                        lat,
+                        lng,
+                        data: processedData,
+                    };
+                } catch (error) {
+                    if (error.original && error.original.code === 'ER_NO_SUCH_TABLE') {
+                        console.warn(`Tablo bulunamadı: ${datacode}`);
+                        return null; // Tablo yoksa null döndür
+                    }
+                    throw error; // Diğer hataları yükselt
+                }
+            })
+        );
+
+        // Geçerli olan (null olmayan) sonuçları filtrele
+        const validResults = results.filter((result) => result !== null);
+
+        // 3. Veriyi Frontend'e Gönder
+        res.json({
+            message: 'Nem haritası verileri başarıyla alındı.',
+            sensors: validResults,
+        });
+    } catch (error) {
+        console.error('getSoilMoistureData Hatası:', error);
+        res.status(500).json({ error: 'Nem haritası verileri alınamadı.', detail: error.message });
+    }
+};
+
+
 const getTableColumns = async (tableName) => {
     try {
         const columns = await sensorData.query(
@@ -273,4 +376,4 @@ const addSensorData = async (req, res) => {
 };
 
 
-module.exports = { getSensorData, addSensorData };
+module.exports = { getSensorData, addSensorData ,getSoilMoistureData };
