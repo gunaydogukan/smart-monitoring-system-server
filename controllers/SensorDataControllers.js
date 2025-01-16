@@ -3,6 +3,8 @@ const LastSensorData = require('../models/logs/LastSensorData');
 const Sequelize = require("sequelize");
 const { Op } = require('sequelize');
 const Sensors = require("../models/sensors/Sensors");
+const {getSensorIdsByOwner} =  require ("../services/sensorServices");
+
 // Tablo sütunlarını dinamik olarak almak için yardımcı fonksiyon
 //Bunu kullanmamızın sebebi nem'in diğerlerinden fazla sütunu oldugu için
 
@@ -31,11 +33,23 @@ const calculateAverageHumidity = (sagustNem, sagaltNem, solaltNem, minValue, max
 
 const getSoilMoistureData = async (req, res) => {
     try {
-        // 1. Sensors Tablosundan type = 1 Olanları Al
-        const sensors = await Sensors.findAll({
-            where: { type: 1 },
-            attributes: ['datacode', 'lat', 'lng', 'name'], // Gerekli kolonları al
-        });
+        let ownerSensorsId;
+        let sensors ;
+
+        if(req.user.role !=="administrator"){
+            ownerSensorsId = await getSensorIdsByOwner(req.user.id);
+            console.log(ownerSensorsId);
+              sensors = await Sensors.findAll({
+                where: { type: 1, id:ownerSensorsId },
+                attributes: ['datacode', 'lat', 'lng', 'name'], // Gerekli kolonları al
+            });
+        }else{
+            sensors = await Sensors.findAll({
+                where: { type: 1 },
+                attributes: ['datacode', 'lat', 'lng', 'name'], // Gerekli kolonları al
+            });
+        }
+
 
         if (!sensors || sensors.length === 0) {
             return res.status(404).json({ error: 'Hiç sensör bulunamadı.' });
@@ -107,7 +121,6 @@ const getSoilMoistureData = async (req, res) => {
     }
 };
 
-
 const getTableColumns = async (tableName) => {
     try {
         const columns = await sensorData.query(
@@ -164,12 +177,12 @@ const getLatestData = async (tableName, selectedColumns, grouping, rangeInHours)
 
 
 // Zaman aralığına göre dinamik veri çekme
-// Zaman aralığına göre dinamik veri çekme
 const getSensorDataByInterval = async (tableName, interval) => {
     let dateRangeStart, dateRangeEnd, rangeInHours;
     const endOfRange = new Date();
     let grouping;
 
+    //zaman ayarı
     switch (interval) {
         case '1 Gün':
             dateRangeStart = new Date(endOfRange.getTime() - 24 * 60 * 60 * 1000);  // Son 24 saat
@@ -232,38 +245,6 @@ const getSensorDataByInterval = async (tableName, interval) => {
         type: Sequelize.QueryTypes.SELECT,
     });
 
-/*    silenecek data time işlemi bitince
-    //Sensörden gelen en son veri alınıp sensorDataLog table'ına atılır, En son veri ne zaman geldi kontrolü
-    if(interval ==="1 Gün"){
-        console.log("veriler = ",data);
-        const latestData = [...data]
-            .sort((a, b) => new Date(b.time) - new Date(a.time))[0];
-        console.log("Son veri =", latestData);
-
-        //son veri alınamazsa
-        if (!latestData || !latestData.time) {
-            console.error("intervalFonk. lastData işlemi ");
-            return;
-        }
-
-        const [result, created] = await LastSensorData.findOrCreate({
-            where: { dataCode: tableName }, // Burada doğru sütunu kullanın
-            defaults: {
-                dataCode: tableName,
-                lastUpdatedTime: latestData.time,
-            },
-        });
-
-        // Eğer zaten mevcutsa lastUpdatedTime'ı güncelle
-        if (!created) {
-            result.lastUpdatedTime = latestData.time;
-            await result.save();
-        }
-        console.log(created ? "Yeni kayıt oluşturuldu." : "Mevcut kayıt güncellendi.");
-    }
-
- */
-
     if (!data || data.length === 0) {
         console.log("Seçilen aralıkta veri yok, en son veri gösteriliyor.");
         return await getLatestData(tableName, selectedColumns, grouping, rangeInHours);
@@ -272,8 +253,6 @@ const getSensorDataByInterval = async (tableName, interval) => {
     return data;
 };
 
-
-// Ana veri alma fonksiyonu
 // Ana veri alma fonksiyonu
 const getSensorData = async (req, res) => {
     const { dataCode, interval } = req.query;
