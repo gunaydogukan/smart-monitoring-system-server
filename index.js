@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const bodyParser = require('body-parser');
 const sequelize = require("./config/database");
 const sensorCheckRoutes = require('./routes/sensorCheck/sensorCheckRouter');
 const userRoutes = require('./routes/userRoutes');
@@ -8,6 +9,7 @@ const sensorDataRoutes = require('./routes/sensorDataRoutes');
 const IPlogsRoutes = require('./routes/logs/IpLogRoutes');
 const SensorDatalogsRoutes = require('./routes/logs/SensorDataLogRoutes');
 const sensorLogsRoutes = require('./routes/logs/sensorLogsRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 require('dotenv').config();
 
 const app = express();
@@ -16,6 +18,7 @@ const port = 5000;
 app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
 
 app.use(express.json());
+app.use(bodyParser.json());
 
 app.use('/api', userRoutes);
 app.use('/api', sensorRoutes);
@@ -24,6 +27,7 @@ app.use('/api/sensors', sensorCheckRoutes);
 app.use('/log', IPlogsRoutes);
 app.use('/log', SensorDatalogsRoutes);
 app.use('/api/sensor-logs', sensorLogsRoutes);
+app.use('/dashboard',dashboardRoutes);
 
 sequelize
     //.sync({ alter: true })

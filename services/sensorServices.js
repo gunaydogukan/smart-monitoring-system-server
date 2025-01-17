@@ -1,5 +1,6 @@
 const Sensors = require('../models/sensors/Sensors');
 const SensorOwner = require('../models/sensors/sensorOwner');
+const Type = require("../models/sensors/SensorTypes");
 
 // Tüm sensörleri alma
 const getAllSensors = async () => {
@@ -47,9 +48,20 @@ const getSensorByOwner= async (userId,sensorId) => {
     return ownedSensors;
 }
 
+const getTypes = async () => {
+    try {
+        const types = await Type.findAll();
+        return types;
+    } catch (error) {
+        console.error('Tipler alınırken hata:', error);
+    }
+};
+
+
 module.exports = {
     getAllSensors,
     getSensorsByIds,
     getSensorIdsByOwner,
-    getSensorByOwner
+    getSensorByOwner,
+    getTypes
 };
