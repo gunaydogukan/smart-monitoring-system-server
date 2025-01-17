@@ -1,12 +1,13 @@
-const PDFDocument = require('pdfkit');
-const ExcelJS = require('exceljs');
-const fs = require('fs');
+const excel = require('../services/createExcel');
+const pdf = require('../services/createPDF');
 const sensorServices = require('../services/sensorServices');
 const userServices = require('../services/userServices');
 const companyServices = require ('../services/companyServices');
 
+
 //manager ile girdiğinde managerea it olan personellerin sensörlerini böl yapılabilir...
 const getTotalSensors = async (req,res) => {
+    const reportType = req.query.reportType || req.params.reportType;
     const user = req.user;
     if(!user){
         return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
@@ -44,47 +45,107 @@ const getTotalSensors = async (req,res) => {
         }
     });
 
-    return res.status(200).json({
+    const result = {
         totalSensors: sensorsLen,
         activeSensorsLen: activeCount,
         passiveSensorsLen: passiveCount,
-        activeSensors:activeSensors,
-        passiveSensors:passiveSensors,
-        sensors:sensors
-    });
+        activeSensors,
+        passiveSensors,
+        sensors,
+    };
+
+    if (reportType) {
+        if(reportType==="pdf"){
+            try {
+                const reportPath = await pdf.generateReportTotalSensros(result);
+                return res.status(200).json({ message: 'Rapor oluşturuldu.', reportPath });
+            } catch (error) {
+                return res.status(500).json({ error: `Rapor oluşturulamadı: ${error.message}` });
+            }
+        }else{
+            try {
+                const reportPath = await excel.generateExcelReportTotalSensors(result);
+                return res.status(200).json({ message: 'Rapor oluşturuldu.', reportPath });
+            } catch (error) {
+                return res.status(500).json({ error: `Rapor oluşturulamadı: ${error.message}` });
+            }
+        }
+    }
+
+    return res.status(200).json(result);
 }
 
 //kullancıların aktif pasif sorgusunu yapar (manager ve admin içn)
 const getIsActive = async (req,res) => {
     const user = req.user;
+    const reportType = req.query.reportType || req.params.reportType;
     if(!user || user.role==="personal"){
         return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
     }
 
     const usr = await userServices.getUsers(user.id,user.role); //role göre kullanıcıları getirme
-    console.log(usr);
     let active = usr.filter(user => user.dataValues.isActive === true);
     let pasive = usr.filter(user => user.dataValues.isActive === false);
-    console.log(active);
-    console.log(pasive);
-    return res.status(200).json({
-        activeUsersLen: active.length,
-        activeUsers:active,
-        passiveUsersLen: pasive.length,
-        passiveUsers: pasive
 
-    });
+    // Rapor verilerini hazırlamak
+    const reportData = {
+        totalUsers: usr.length,
+        activeUsersLen: active.length,
+        passiveUsersLen: pasive.length,
+        activeUsers: active,
+        passiveUsers: pasive
+    };
+
+    if (reportType) {
+        try {
+            let result;
+
+            if (reportType === "pdf") {
+                result = await pdf.generatePDFReportIsActive(reportData);
+            } else {
+                result = await excel.generateExcelReportIsActive(reportData);
+            }
+            // Return success response with the result
+            return res.status(200).json({ message: 'Rapor oluşturuldu.', result });
+        } catch (err) {
+            // Return error response if report generation fails
+            return res.status(500).json({ error: `Rapor oluşturulamadı: ${err.message}` });
+        }
+    }
+
+
+    return res.status(200).json(reportData);
 }
 
 //toplam kurum sayısı(sadece admin için görülür)
 const getAllCompaies = async (req,res) =>{
     const user = req.user;
+    const reportType = req.query.reportType || req.params.reportType;
     if(!user || (user.role==="manager" || user.role==="personal")){
         return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
     }
 
     const company = await companyServices.getAllCompanies();
     console.log(company);
+
+    // Generate PDF and Excel reports
+    if (reportType) {
+        try {
+            let result;
+
+            // Generate PDF report if requested
+            if (reportType === "pdf") {
+                result = await pdf.generatePDFReportCompanies(company);
+            } else {
+                // Generate Excel report if requested
+                result = await excel.generateExcelReportCompanies(company);
+            }
+
+            return res.status(200).json({ message: 'Rapor oluşturuldu.', result });
+        } catch (err) {
+            return res.status(500).json({ error: `Rapor oluşturulamadı: ${err.message}` });
+        }
+    }
 
     return res.status(200).json({
         companyLen: company.length
@@ -94,6 +155,7 @@ const getAllCompaies = async (req,res) =>{
 //sensör tiplerine göre dağılım yapma fonksoynu
 const getSensorsTypesCount = async (req,res)=>{
     const user = req.user;
+    const reportType = req.query.reportType || req.params.reportType;
     if(!user){
         return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
     }
@@ -131,6 +193,25 @@ const getSensorsTypesCount = async (req,res)=>{
         console.error("Sensors verisi bir array değil:", sensors);
     }
 
+    // Generate reports if requested
+    if (reportType) {
+        try {
+            let result;
+
+            // Generate PDF report if requested
+            if (reportType === "pdf") {
+                result = await pdf.generatePDFReportTypeClass(groupedSensors, groupedLengths,types);
+            } else {
+                // Generate Excel report if requested
+                result = await excel.generateExcelReportTypeClass(groupedSensors, groupedLengths,types);
+            }
+
+            return res.status(200).json({ message: 'Rapor oluşturuldu.', result });
+        } catch (err) {
+            return res.status(500).json({ error: `Rapor oluşturulamadı: ${err.message}` });
+        }
+    }
+
     // JSON çıktısını geri döndür
     return res.status(200).json({
         groupedLengths,
@@ -142,13 +223,13 @@ const getSensorsTypesCount = async (req,res)=>{
 //kurumlara göre sensör dağılımı
 const getCompanySensorStats= async (req,res)=>{
     const user = req.user;
+    const reportType = req.query.reportType || req.params.reportType;
     if(!user || (user.role==="manager"|| user.role==="personal")){
         return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
     }
 
     let company = await companyServices.getAllCompanies();
     let sensors = await sensorServices.getAllSensors();
-    console.log(company)
     if(!sensors || !company){
         return res.status(403).json({ error: "Sensör veya şirket bilgisi yok veya alınamadı" });
     }
@@ -174,16 +255,35 @@ const getCompanySensorStats= async (req,res)=>{
         return res.status(500).json({ error: "Sensör verisi veya şirket verisi beklenen formatta değil" });
     }
 
+    // Koşul: Rapor oluşturulması istenmişse
+    if (reportType) {
+        try {
+            let result;
+
+            // Rapor tipi kontrolü
+            switch (reportType.toLowerCase()) {
+                case "pdf":
+                    result = await pdf.generatePdfReportCompanyStats(groupedLengths, company, groupedCompany);
+                    break;
+                case "excel":
+                    result = await excel.generateExcelReportCompanyStats(groupedLengths, company, groupedCompany);
+                    break;
+                default:
+                    return res.status(400).json({ error: "Geçersiz rapor türü. 'pdf' veya 'excel' olmalıdır." });
+            }
+
+            return res.status(200).json({ message: "Rapor başarıyla oluşturuldu.", result });
+        } catch (err) {
+            return res.status(500).json({ error: `Rapor oluşturulamadı: ${err.message}` });
+        }
+    }
+
     return res.status(200).json({
         groupedLengths,
         company,
         groupedCompany
     });
 }
-
-
-
-
 
 
 
