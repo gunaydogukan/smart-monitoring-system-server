@@ -301,7 +301,26 @@ async function isActiveForIP(req, res) {
             });
         }
 
+        const oldData = {
+            id: sensor.id,
+            isActive: sensor.isActive,
+        };
+
         await sensor.update({ isActive });
+
+        const newData = {
+            id: sensor.id,
+            isActive: isActive,
+        };
+
+        // Loglama işlemi
+        await SensorLogs.create({
+            sensorId: sensor.id,
+            oldData: JSON.stringify(oldData),
+            newData: JSON.stringify(newData),
+            action: isActive ? "Sensor Activated" : "Sensor Deactivated",
+            timestamp: new Date(),
+        });
 
         return res.status(200).json({
             message: "Sensör durumu başarıyla güncellendi.",

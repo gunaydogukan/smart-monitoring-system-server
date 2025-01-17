@@ -185,7 +185,6 @@ async function generateExcelReportCompanies(companies) {
     return filePath;
 }
 
-
 async function generateExcelReportTypeClass(groupedSensors, groupedLengths, types) {
     const desktopPath = path.join(os.homedir(), 'Desktop'); // Desktop path
 
@@ -311,5 +310,62 @@ const generateExcelReportCompanyStats = async (groupedLengths, company, groupedC
     return filePath;
 };
 
+const generateExcelSensorLog = async (logsData) => {
+    const ExcelJS = require('exceljs');
+    const fs = require('fs');
+    const path = require('path');
+    const os = require('os');
 
-module.exports = {generateExcelReportTotalSensors,generateExcelReportIsActive,generateExcelReportCompanies,generateExcelReportTypeClass,generateExcelReportCompanyStats};
+    try {
+        const logs = logsData.logs;
+
+        if (!Array.isArray(logs) || logs.length === 0) {
+            throw new Error("Log verisi bulunamadı veya geçersiz.");
+        }
+
+        const desktopPath = path.join(os.homedir(), 'Desktop');
+        if (!fs.existsSync(desktopPath)) {
+            fs.mkdirSync(desktopPath, { recursive: true });
+        }
+
+        const filePath = path.join(desktopPath, `${Date.now()}_sensor_logs.xlsx`);
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Sensor Logs');
+
+        sheet.columns = [
+            { header: 'Log ID', key: 'id', width: 10 },
+            { header: 'Sensor ID', key: 'sensorId', width: 15 },
+            { header: 'Action', key: 'action', width: 20 },
+            { header: 'Old Data', key: 'oldData', width: 50 },
+            { header: 'New Data', key: 'newData', width: 50 },
+            { header: 'Timestamp', key: 'timestamp', width: 25 },
+        ];
+
+        logs.forEach((log) => {
+            sheet.addRow({
+                id: log.id,
+                sensorId: log.sensorId,
+                action: log.action,
+                oldData: log.oldData,
+                newData: log.newData,
+                timestamp: log.timestamp,
+            });
+        });
+
+        await workbook.xlsx.writeFile(filePath);
+        console.log('Excel dosyası başarıyla oluşturuldu:', filePath);
+        return filePath;
+    } catch (error) {
+        console.error('Excel dosyası oluşturulurken bir hata oluştu:', error);
+        throw new Error('Excel dosyası oluşturulamadı.');
+    }
+};
+
+module.exports = {
+    generateExcelReportTotalSensors,
+    generateExcelReportIsActive,
+    generateExcelReportCompanies,
+    generateExcelReportTypeClass,
+    generateExcelReportCompanyStats,
+    generateExcelSensorLog
+};

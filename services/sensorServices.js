@@ -1,6 +1,7 @@
 const Sensors = require('../models/sensors/Sensors');
 const SensorOwner = require('../models/sensors/sensorOwner');
 const Type = require("../models/sensors/SensorTypes");
+const SensorLogs = require('../models/logging/sensorsLog');
 
 // Tüm sensörleri alma
 const getAllSensors = async () => {
@@ -57,11 +58,57 @@ const getTypes = async () => {
     }
 };
 
+//actiona göre sensör logları getirilir.
+//getirilen sensör loglarında kullancılıarın sahip olduğu sensör kontrolü yapılmalı.?
+const getSensorLog = async (userId,role,action) => {
+    try {
+        // `action` değeri kontrolü
+        if (!action || !userId) {
+            throw new Error("Lütfen geçerli bir 'action' değeri sağlayın.");
+        }
+
+        let sensorIds;
+        if(role==="administrator"){
+            const sensors = (await getAllSensors()).sensors;
+            sensorIds = sensors.map(sensor => sensor.id);
+        }else{
+            sensorIds= getSensorIdsByOwner(userId);
+        }
+
+        // Veritabanından `action` değerine göre logları getir
+        const logs = await SensorLogs.findAll({
+            where: {
+                action: action,
+                sensorId: sensorIds
+            },
+            order: [['timestamp', 'DESC']], // En son loglar önce gelsin
+        });
+
+        // Log bulunamadığında
+        if (logs.length === 0) {
+            throw new Error("Belirtilen 'action' değeriyle eşleşen log bulunamadı.");
+        }
+
+        // Logları başarıyla döndür
+        return {
+            success: true,
+            message: `Action '${action}' için loglar başarıyla getirildi.`,
+            logs,
+        };
+    } catch (err) {
+        console.error("Hata:", err);
+        return {
+            success: false,
+            error: err.message,
+        };
+    }
+};
 
 module.exports = {
     getAllSensors,
     getSensorsByIds,
     getSensorIdsByOwner,
     getSensorByOwner,
-    getTypes
+    getTypes,
+    getSensorLog
 };
