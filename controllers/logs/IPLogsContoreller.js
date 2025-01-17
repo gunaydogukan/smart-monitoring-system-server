@@ -103,31 +103,5 @@ const getIpLogs = async (req, res) => {
     }
 };
 
-//Göstermelik olan kendi veri tabanımız
-/*
-const getIpLogs = async (req, res) => {
-    try {
-        const { datacodes } = req.query;
-
-        if (!datacodes) {
-            return res.status(400).json({ message: 'Datacode parametresi eksik.' });
-        }
-
-        const dataCodesArray = datacodes.split(',');
-
-        const ipLogs = await IpLog.findAll({
-            where: {
-                datacode: dataCodesArray,
-            },
-        });
-        console.log(ipLogs);
-
-        return res.status(200).json({ message: 'IP Logları başarıyla alındı.', data: ipLogs });
-    } catch (err) {
-        console.error('Hata: IPLOGSCONTROLLER GETIPLOGS', err);
-        return res.status(500).json({ message: 'IP Logları alınırken bir hata oluştu.', error: err });
-    }
-};
-*/
 
 module.exports = { updateIpLog,getIpLogs };
