@@ -27,7 +27,7 @@ app.use('/api/sensors', sensorCheckRoutes);
 app.use('/log', IPlogsRoutes);
 app.use('/log', SensorDatalogsRoutes);
 app.use('/api/sensor-logs', sensorLogsRoutes);
-app.use('/dashboard',dashboardRoutes);
+app.use('/api/dashboard',dashboardRoutes);
 
 sequelize
     //.sync({ alter: true })
