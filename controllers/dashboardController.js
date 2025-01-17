@@ -285,6 +285,66 @@ const getCompanySensorStats= async (req,res)=>{
     });
 }
 
+//sensor loglarını getirir actiona göre
+const getSensorLog = async (req, res) => {
+    const user = req.user;
+    const reportType = req.query.reportType || req.params.reportType;
+    if (!user) {
+        return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
+    }
+
+    const { action } = req.query;
+    if (!action) {
+        return res.status(400).json({ error: "Lütfen geçerli bir 'action' değeri gönderin." });
+    }
+
+    try {
+        const logs = await sensorServices.getSensorLog(user.id, user.role, action);
+
+        if (logs.length === 0) {
+            return res.status(404).json({ message: "Belirtilen 'action' değeriyle eşleşen log bulunamadı." });
+        }
+
+        // Rapor oluşturma kontrolü
+        if (reportType) {
+            try {
+                let filePath;
+
+                // Rapor türüne göre dosya oluştur
+                switch (reportType.toLowerCase()) {
+                    case "pdf":
+                        filePath = await pdf.generatePDFSensorLog(logs); // `logs` parametresini ilet
+                        break;
+                    case "excel":
+                        filePath = await excel.generateExcelSensorLog(logs); // `logs` parametresini ilet
+                        break;
+                    default:
+                        return res.status(400).json({ error: "Geçersiz rapor türü. 'pdf' veya 'excel' olmalıdır." });
+                }
+
+                return res.status(200).json({
+                    message: "Rapor başarıyla oluşturuldu.",
+                    filePath,
+                });
+            } catch (err) {
+                return res.status(500).json({
+                    error: `Rapor oluşturulamadı: ${err.message}`,
+                });
+            }
+        }
+
+        return res.status(200).json({
+            message: `Action '${action}' için loglar başarıyla getirildi.`,
+            logs,
+        });
+    } catch (error) {
+        console.error("Hata:", error);
+        return res.status(500).json({
+            error: "Loglar getirilirken bir hata oluştu.",
+            details: error.message,
+        });
+    }
+};
 
 
-module.exports={getTotalSensors,getIsActive,getAllCompaies,getSensorsTypesCount,getCompanySensorStats};
+module.exports={getTotalSensors,getIsActive,getAllCompaies,getSensorsTypesCount,getCompanySensorStats,getSensorLog};

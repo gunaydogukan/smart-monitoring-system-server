@@ -216,4 +216,60 @@ const generatePdfReportCompanyStats = async (groupedLengths, companies, groupedC
     return filePath;
 };
 
-module.exports = {generateReportTotalSensros,generatePDFReportIsActive,generatePDFReportCompanies,generatePDFReportTypeClass,generatePdfReportCompanyStats};
+// Log verilerini PDF formatında oluşturma
+const generatePDFSensorLog = async (logsData) => {
+    const PDFDocument = require('pdfkit');
+    const fs = require('fs');
+    const path = require('path');
+    const os = require('os');
+
+    try {
+        // Logların bulunduğundan emin olun
+        const logs = logsData.logs;
+
+        if (!Array.isArray(logs) || logs.length === 0) {
+            throw new Error("Log verisi bulunamadı veya geçersiz.");
+        }
+
+        const desktopPath = path.join(os.homedir(), 'Desktop');
+        if (!fs.existsSync(desktopPath)) {
+            fs.mkdirSync(desktopPath, { recursive: true });
+        }
+
+        const filePath = path.join(desktopPath, `${Date.now()}_sensor_logs.pdf`);
+        const doc = new PDFDocument();
+
+        doc.pipe(fs.createWriteStream(filePath));
+
+        doc.fontSize(18).text('Sensor Logs Report', { align: 'center' });
+        doc.moveDown();
+
+        logs.forEach((log, index) => {
+            doc.fontSize(12).text(`Log #${index + 1}`, { underline: true });
+            doc.text(`Log ID: ${log.id}`);
+            doc.text(`Sensor ID: ${log.sensorId}`);
+            doc.text(`Action: ${log.action}`);
+            doc.text(`Old Data: ${log.oldData}`);
+            doc.text(`New Data: ${log.newData}`);
+            doc.text(`Timestamp: ${log.timestamp}`);
+            doc.moveDown();
+        });
+
+        doc.end();
+        console.log('PDF dosyası başarıyla oluşturuldu:', filePath);
+        return filePath;
+    } catch (error) {
+        console.error('PDF dosyası oluşturulurken bir hata oluştu:', error);
+        throw new Error('PDF dosyası oluşturulamadı.');
+    }
+};
+
+
+module.exports = {
+    generateReportTotalSensros,
+    generatePDFReportIsActive,
+    generatePDFReportCompanies,
+    generatePDFReportTypeClass,
+    generatePdfReportCompanyStats,
+    generatePDFSensorLog
+};
