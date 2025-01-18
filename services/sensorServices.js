@@ -166,7 +166,7 @@ const getSensorLog = async (userId,role) => {
 
         const processedLogs = logsWithSensorsName(logs, sensors);
 
-        console.log(processedLogs);
+
 
         const groupedLogs = processedLogs.reduce(
             (acc, log) => {
