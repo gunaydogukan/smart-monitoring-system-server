@@ -32,12 +32,29 @@ const getSensorsByIds = async (sensorIds) => {
 
 // Kullanıcıya ait sensör ID'lerini alma
 const getSensorIdsByOwner = async (userId) => {
-    const ownedSensors = await SensorOwner.findAll({
-        where: { sensor_owner: userId },
-        attributes: ['sensor_owner','sensor_id'], //
-    });
+    try {
+        // Gelen userId'nin geçerli olup olmadığını kontrol et
+        if (!userId) {
+            throw new Error('User ID is required');
+        }
 
-    return ownedSensors.map(sensor => sensor.sensor_id); // ID'leri liste olarak döndür
+        // Veritabanından ilgili sensörleri al
+        const ownedSensors = await SensorOwner.findAll({
+            where: { sensor_owner: userId },
+            attributes: ['sensor_id'], // Gereksiz attribute'leri çıkardık
+        });
+        // Eğer sonuç boşsa uyarı döndür
+        if (ownedSensors.length === 0) {
+            console.warn(`No sensors found for user ID: ${userId}`);
+            return [];
+        }
+        // ID'leri bir liste olarak döndür
+        return ownedSensors.map(sensor => sensor.sensor_id);
+
+    } catch (error) {
+        console.error('Error fetching sensor IDs:', error.message);
+        throw error; // Hatanın yukarıya fırlatılması
+    }
 };
 
 const getSensorByOwner= async (userId,sensorId) => {

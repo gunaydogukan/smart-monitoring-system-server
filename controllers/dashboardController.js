@@ -27,7 +27,7 @@ const getTotalSensors = async (req,res) => {
     }else{
         const sensorsIds = await sensorServices.getSensorIdsByOwner(user.id); //kişinin kendisine ait sensörlerinin id'si gelir
         sensorsLen = sensorsIds.length ;
-        sensors = await sensorServices.getSensorsByIds(sensorsIds.sensor_id);
+        sensors = await sensorServices.getSensorsByIds(sensorsIds);
     }
 
     if(sensors == null){
@@ -53,7 +53,6 @@ const getTotalSensors = async (req,res) => {
         passiveSensors,
         sensors,
     };
-
     if (reportType) {
         if(reportType==="pdf"){
             try {
