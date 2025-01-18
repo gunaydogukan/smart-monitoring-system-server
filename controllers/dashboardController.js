@@ -1,288 +1,347 @@
-const excel = require('../services/createExcel');
+const fs = require('fs');
+const path = require('path');
 const pdf = require('../services/createPDF');
+const excel = require('../services/createExcel');
 const sensorServices = require('../services/sensorServices');
 const userServices = require('../services/userServices');
-const companyServices = require ('../services/companyServices');
+const companyServices = require('../services/companyServices');
+const getTotalSensors = async (req, res) => {
+    try {
+        const reportType = req.query.reportType; // Rapor tipi kontrolü
+        const user = req.user;
 
+        if (!user) {
+            return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
+        }
 
-//manager ile girdiğinde managerea it olan personellerin sensörlerini böl yapılabilir...
-const getTotalSensors = async (req,res) => {
-    const reportType = req.query.reportType || req.params.reportType;
-    const user = req.user;
-    if(!user){
-        return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
-    }
+        // Sensör verilerini hazırla
+        let sensors;
+        let sensorsLen;
+        const activeSensors = [];
+        const passiveSensors = [];
+        let activeCount = 0;
+        let passiveCount = 0;
 
-    let sensors;
-    let sensorsLen;
-    const activeSensors = [];
-    const passiveSensors = [];
-    let activeCount = 0;
-    let passiveCount = 0;
-    //kullanıcı eğer admin ise tüm sensörler gelir
-    if(user.role==="administrator"){
-        sensors=await sensorServices.getAllSensors();
-        sensors= sensors.sensors;
-        sensorsLen=sensors.length;
-    }else{
-        const sensorsIds = await sensorServices.getSensorIdsByOwner(user.id); //kişinin kendisine ait sensörlerinin id'si gelir
-        sensorsLen = sensorsIds.length ;
-        sensors = await sensorServices.getSensorsByIds(sensorsIds);
-    }
-
-    if(sensors == null){
-        return res.status(400).json({ error: "Veri bulunamadı" });
-    }
-
-    // Sensörlerin aktif ve pasif durumlarını ayırma
-    sensors.forEach(sensor => {
-        if (sensor.isActive) {
-            activeSensors.push(sensor); // Aktif sensörü listeye ekle
-            activeCount += 1;          // Aktif sayaç artır
+        if (user.role === "administrator") {
+            const allSensors = await sensorServices.getAllSensors();
+            sensors = allSensors.sensors || [];
+            sensorsLen = sensors.length;
         } else {
-            passiveSensors.push(sensor); // Pasif sensörü listeye ekle
-            passiveCount += 1;          // Pasif sayaç artır
+            const sensorsIds = await sensorServices.getSensorIdsByOwner(user.id);
+            sensorsLen = sensorsIds.length;
+            sensors = await sensorServices.getSensorsByIds(sensorsIds);
         }
-    });
 
-    const result = {
-        totalSensors: sensorsLen,
-        activeSensorsLen: activeCount,
-        passiveSensorsLen: passiveCount,
-        activeSensors,
-        passiveSensors,
-        sensors,
-    };
-    if (reportType) {
-        if(reportType==="pdf"){
-            try {
-                const reportPath = await pdf.generateReportTotalSensros(result);
-                return res.status(200).json({ message: 'Rapor oluşturuldu.', reportPath });
-            } catch (error) {
-                return res.status(500).json({ error: `Rapor oluşturulamadı: ${error.message}` });
-            }
-        }else{
-            try {
-                const reportPath = await excel.generateExcelReportTotalSensors(result);
-                return res.status(200).json({ message: 'Rapor oluşturuldu.', reportPath });
-            } catch (error) {
-                return res.status(500).json({ error: `Rapor oluşturulamadı: ${error.message}` });
-            }
+        if (!sensors || sensors.length === 0) {
+            return res.status(404).json({ error: "Hiç sensör bulunamadı." });
         }
+
+        sensors.forEach(sensor => {
+            if (sensor.isActive) {
+                activeSensors.push(sensor);
+                activeCount += 1;
+            } else {
+                passiveSensors.push(sensor);
+                passiveCount += 1;
+            }
+        });
+
+        const result = {
+            totalSensors: sensorsLen,
+            activeSensorsLen: activeCount,
+            passiveSensorsLen: passiveCount,
+            activeSensors,
+            passiveSensors,
+            sensors,
+        };
+
+        // Eğer rapor tipi belirtilmişse, rapor oluştur ve indir
+        if (reportType) {
+            if (reportType === "pdf") {
+                const filePath = await pdf.generateReportTotalSensors(result);
+
+                if (!fs.existsSync(filePath)) {
+                    return res.status(500).json({ error: "PDF dosyası bulunamadı." });
+                }
+
+                res.setHeader('Content-Type', 'application/pdf');
+                res.setHeader('Content-Disposition', 'attachment; filename="TumSensorlerinRaporu.pdf"');
+                return res.sendFile(filePath);
+            }
+
+            if (reportType === "excel") {
+                const filePath = await excel.generateExcelReportTotalSensors(result);
+
+                if (!fs.existsSync(filePath)) {
+                    return res.status(500).json({ error: "Excel dosyası bulunamadı." });
+                }
+
+                res.setHeader(
+                    'Content-Type',
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                );
+                res.setHeader('Content-Disposition', 'attachment; filename="TumSensorlerinRaporu.xlsx"');
+                return res.sendFile(filePath);
+            }
+
+            return res.status(400).json({ error: "Geçersiz rapor türü. 'pdf' veya 'excel' olmalıdır." });
+        }
+
+        // Eğer rapor tipi belirtilmemişse, sensör verilerini döndür
+        return res.status(200).json(result);
+    } catch (error) {
+        console.error("getTotalSensors hata:", error.message, error.stack);
+        return res.status(500).json({ error: "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin." });
     }
+};
 
-    return res.status(200).json(result);
-}
 
 //kullancıların aktif pasif sorgusunu yapar (manager ve admin içn)
-const getIsActive = async (req,res) => {
-    const user = req.user;
-    const reportType = req.query.reportType || req.params.reportType;
-    if(!user || user.role==="personal"){
-        return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
-    }
+const getIsActive = async (req, res) => {
+    try {
+        const user = req.user;
+        const reportType = req.query.reportType;
 
-    const usr = await userServices.getUsers(user.id,user.role); //role göre kullanıcıları getirme
-    let active = usr.filter(user => user.dataValues.isActive === true);
-    let pasive = usr.filter(user => user.dataValues.isActive === false);
+        if (!user || user.role === "personal") {
+            return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
+        }
 
-    // Rapor verilerini hazırlamak
-    const reportData = {
-        totalUsers: usr.length,
-        activeUsersLen: active.length,
-        passiveUsersLen: pasive.length,
-        activeUsers: active,
-        passiveUsers: pasive
-    };
+        // Kullanıcıları al ve gruplandır
+        const users = await userServices.getUsers(user.id, user.role);
+        const activeUsers = users.filter(u => u.dataValues.isActive === true);
+        const passiveUsers = users.filter(u => u.dataValues.isActive === false);
 
-    if (reportType) {
-        try {
-            let result;
+        const reportData = {
+            totalUsers: users.length,
+            activeUsersLen: activeUsers.length,
+            passiveUsersLen: passiveUsers.length,
+            activeUsers,
+            passiveUsers,
+        };
+
+        // Eğer rapor tipi belirtilmişse raporu oluştur ve indir
+        if (reportType) {
+            let filePath;
 
             if (reportType === "pdf") {
-                result = await pdf.generatePDFReportIsActive(reportData);
-            } else {
-                result = await excel.generateExcelReportIsActive(reportData);
+                filePath = await pdf.generatePDFReportIsActive(reportData);
+                if (!fs.existsSync(filePath)) {
+                    return res.status(500).json({ error: "PDF dosyası bulunamadı." });
+                }
+
+                res.setHeader("Content-Type", "application/pdf");
+                res.setHeader("Content-Disposition", "attachment; filename=KullancilarRaporu.pdf");
+                return res.sendFile(filePath);
             }
-            // Return success response with the result
-            return res.status(200).json({ message: 'Rapor oluşturuldu.', result });
-        } catch (err) {
-            // Return error response if report generation fails
-            return res.status(500).json({ error: `Rapor oluşturulamadı: ${err.message}` });
+
+            if (reportType === "excel") {
+                filePath = await excel.generateExcelReportIsActive(reportData);
+                if (!fs.existsSync(filePath)) {
+                    return res.status(500).json({ error: "Excel dosyası bulunamadı." });
+                }
+
+                res.setHeader(
+                    "Content-Type",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                );
+                res.setHeader("Content-Disposition", "attachment; filename=KullancilarRaporu.xlsx");
+                return res.sendFile(filePath);
+            }
+
+            return res.status(400).json({ error: "Geçersiz rapor türü. 'pdf' veya 'excel' olmalıdır." });
         }
+
+        // Eğer rapor tipi belirtilmemişse veriyi döndür
+        return res.status(200).json(reportData);
+    } catch (error) {
+        console.error("getIsActive hata:", error.message, error.stack);
+        return res.status(500).json({ error: "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin." });
     }
+};
 
-
-    return res.status(200).json(reportData);
-}
 
 //toplam kurum sayısı(sadece admin için görülür)
-const getAllCompaies = async (req,res) =>{
-    const user = req.user;
-    const reportType = req.query.reportType || req.params.reportType;
-    if(!user || (user.role==="manager" || user.role==="personal")){
-        return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
-    }
+const getAllCompanies = async (req, res) => {
+    try {
+        const user = req.user;
+        const reportType = req.query.reportType;
 
-    const company = await companyServices.getAllCompanies();
-    console.log(company);
+        if (!user || user.role === "manager" || user.role === "personal") {
+            return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
+        }
 
-    // Generate PDF and Excel reports
-    if (reportType) {
-        try {
-            let result;
+        // Tüm şirketleri al
+        const companies = await companyServices.getAllCompanies();
 
-            // Generate PDF report if requested
+        if (!companies || companies.length === 0) {
+            return res.status(404).json({ error: "Hiçbir şirket bulunamadı." });
+        }
+
+        // Eğer rapor tipi belirtilmişse, rapor oluştur ve indir
+        if (reportType) {
+            let filePath;
+
             if (reportType === "pdf") {
-                result = await pdf.generatePDFReportCompanies(company);
-            } else {
-                // Generate Excel report if requested
-                result = await excel.generateExcelReportCompanies(company);
+                filePath = await pdf.generatePDFReportCompanies(companies);
+                if (!fs.existsSync(filePath)) {
+                    return res.status(500).json({ error: "PDF dosyası bulunamadı." });
+                }
+
+                res.setHeader("Content-Type", "application/pdf");
+                res.setHeader("Content-Disposition", "attachment; filename=SirketlerRaporu.pdf");
+                return res.sendFile(filePath);
             }
 
-            return res.status(200).json({ message: 'Rapor oluşturuldu.', result });
-        } catch (err) {
-            return res.status(500).json({ error: `Rapor oluşturulamadı: ${err.message}` });
-        }
-    }
+            if (reportType === "excel") {
+                filePath = await excel.generateExcelReportCompanies(companies);
+                if (!fs.existsSync(filePath)) {
+                    return res.status(500).json({ error: "Excel dosyası bulunamadı." });
+                }
 
-    return res.status(200).json({
-        companyLen: company.length
-    });
-}
+                res.setHeader(
+                    "Content-Type",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                );
+                res.setHeader("Content-Disposition", "attachment; filename=SirketlerRaporu.xlsx");
+                return res.sendFile(filePath);
+            }
+
+            return res.status(400).json({ error: "Geçersiz rapor türü. 'pdf' veya 'excel' olmalıdır." });
+        }
+
+        // Eğer rapor tipi belirtilmemişse, JSON formatında veri döndür
+        return res.status(200).json({ companyLen: companies.length, companies });
+    } catch (error) {
+        console.error("getAllCompanies hata:", error.message, error.stack);
+        return res.status(500).json({ error: "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin." });
+    }
+};
+
 
 //sensör tiplerine göre dağılım yapma fonksoynu
-const getSensorsTypesCount = async (req,res)=>{
-    const user = req.user;
-    const reportType = req.query.reportType || req.params.reportType;
-    if(!user){
-        return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
-    }
+const getSensorsTypesCount = async (req, res) => {
+    try {
+        const user = req.user;
+        const reportType = req.query.reportType;
 
-    let types = await sensorServices.getTypes();
-    let sensorsId
-    let sensors;
+        if (!user) {
+            return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
+        }
 
-    if(user.role==="administrator"){
-        sensors = (await sensorServices.getAllSensors()).sensors; //admin tüm sensörleri getirir
-    }else{ // manager veya personel kendisine ait olan sensörlerini getirir
-        sensorsId=await sensorServices.getSensorIdsByOwner(user.id);
-        sensors=await sensorServices.getSensorsByIds(sensorsId);
-    }
+        let sensors;
+        if (user.role === "administrator") {
+            sensors = (await sensorServices.getAllSensors()).sensors;
+        } else {
+            const sensorsIds = await sensorServices.getSensorIdsByOwner(user.id);
+            sensors = await sensorServices.getSensorsByIds(sensorsIds);
+        }
 
-    // Sensörleri türlerine göre gruplama
-    const groupedSensors = {};
-    const groupedLengths = {};
+        const types = await sensorServices.getTypes();
+        const groupedSensors = {};
+        const groupedLengths = {};
 
-    //gruplama yapılır
-    if (Array.isArray(sensors)) {
-        sensors.forEach(sensor => {
-            const type = sensor.dataValues?.type; // Type değerini al
+        sensors.forEach((sensor) => {
+            const type = sensor.dataValues?.type || "Unknown";
             if (!groupedSensors[type]) {
-                groupedSensors[type] = []; // Eğer type yoksa boş bir array oluştur
-                groupedLengths[type] = 0; // Type için bir sayaç oluştur
+                groupedSensors[type] = [];
+                groupedLengths[type] = 0;
             }
-            groupedSensors[type].push(sensor.dataValues); // DataValues içeriğini ekle
-            groupedLengths[type] += 1; // Gruptaki sensör sayısını artır
+            groupedSensors[type].push(sensor.dataValues);
+            groupedLengths[type] += 1;
         });
 
-        console.log("Grouped Sensors:", groupedSensors);
-        console.log("Grouped Lengths:", groupedLengths);
-    } else {
-        console.error("Sensors verisi bir array değil:", sensors);
-    }
+        if (reportType) {
+            const filePath =
+                reportType === "pdf"
+                    ? await pdf.generatePDFReportTypeClass(groupedSensors, groupedLengths, types)
+                    : await excel.generateExcelReportTypeClass(groupedSensors, groupedLengths, types);
 
-    // Generate reports if requested
-    if (reportType) {
-        try {
-            let result;
-
-            // Generate PDF report if requested
-            if (reportType === "pdf") {
-                result = await pdf.generatePDFReportTypeClass(groupedSensors, groupedLengths,types);
-            } else {
-                // Generate Excel report if requested
-                result = await excel.generateExcelReportTypeClass(groupedSensors, groupedLengths,types);
+            if (!fs.existsSync(filePath)) {
+                return res.status(500).json({ error: `${reportType.toUpperCase()} dosyası bulunamadı.` });
             }
 
-            return res.status(200).json({ message: 'Rapor oluşturuldu.', result });
-        } catch (err) {
-            return res.status(500).json({ error: `Rapor oluşturulamadı: ${err.message}` });
+            const fileName = reportType === "pdf" ? "SensorTipRaporu.pdf" : "SensorTipRaporu.xlsx";
+            res.setHeader(
+                "Content-Type",
+                reportType === "pdf"
+                    ? "application/pdf"
+                    : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            );
+            res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+            return res.sendFile(filePath);
         }
-    }
 
-    // JSON çıktısını geri döndür
-    return res.status(200).json({
-        groupedLengths,
-        groupedSensors,
-        types
-    });
-}
+        return res.status(200).json({ groupedLengths, groupedSensors, types });
+    } catch (error) {
+        console.error("getSensorsTypesCount hata:", error.message, error.stack);
+        return res.status(500).json({ error: "Beklenmeyen bir hata oluştu." });
+    }
+};
+
 
 //kurumlara göre sensör dağılımı
-const getCompanySensorStats= async (req,res)=>{
-    const user = req.user;
-    const reportType = req.query.reportType || req.params.reportType;
-    if(!user || (user.role==="manager"|| user.role==="personal")){
-        return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
-    }
+const getCompanySensorStats = async (req, res) => {
+    try {
+        const user = req.user;
+        const reportType = req.query.reportType;
 
-    let company = await companyServices.getAllCompanies();
-    let sensors = await sensorServices.getAllSensors();
-    if(!sensors || !company){
-        return res.status(403).json({ error: "Sensör veya şirket bilgisi yok veya alınamadı" });
-    }
+        if (!user || (user.role === "manager" || user.role === "personal")) {
+            return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
+        }
 
-    // Sensörleri türlerine göre gruplama
-    const groupedCompany = {};
-    const groupedLengths = {};
+        const companies = await companyServices.getAllCompanies();
+        const sensors = (await sensorServices.getAllSensors()).sensors;
 
-    if(!Array.isArray(sensors) || !Array.isArray(company)){
-        sensors.sensors.forEach(sensors=>{
-           const companyCode = sensors.dataValues.company_code;
+        if (!sensors || !companies) {
+            return res.status(404).json({ error: "Şirket veya sensör bilgisi alınamadı." });
+        }
+
+        const groupedCompany = {};
+        const groupedLengths = {};
+
+        sensors.forEach(sensor => {
+            const companyCode = sensor.company_code;
 
             if (!groupedCompany[companyCode]) {
-                groupedCompany[companyCode] = []; // Yeni bir grup oluştur
-                groupedLengths[companyCode] = 0; // Sayaç başlat
+                groupedCompany[companyCode] = [];
+                groupedLengths[companyCode] = 0;
             }
-            groupedCompany[companyCode].push(sensors); // Sensörü ilgili gruba ekle
-            groupedLengths[companyCode] += 1; // Sayaç artır
+            groupedCompany[companyCode].push(sensor);
+            groupedLengths[companyCode]++;
         });
 
-    }else{
-        console.error("Sensors verisi veya şirket verisi bir array değil:", sensors,company);
-        return res.status(500).json({ error: "Sensör verisi veya şirket verisi beklenen formatta değil" });
-    }
+        if (reportType) {
+            try {
+                const filePath =
+                    reportType === "pdf"
+                        ? await pdf.generatePdfReportCompanyStats(groupedLengths, companies, groupedCompany)
+                        : await excel.generateExcelReportCompanyStats(groupedLengths, companies, groupedCompany);
 
-    // Koşul: Rapor oluşturulması istenmişse
-    if (reportType) {
-        try {
-            let result;
+                if (!fs.existsSync(filePath)) {
+                    return res.status(500).json({ error: `${reportType.toUpperCase()} dosyası bulunamadı.` });
+                }
 
-            // Rapor tipi kontrolü
-            switch (reportType.toLowerCase()) {
-                case "pdf":
-                    result = await pdf.generatePdfReportCompanyStats(groupedLengths, company, groupedCompany);
-                    break;
-                case "excel":
-                    result = await excel.generateExcelReportCompanyStats(groupedLengths, company, groupedCompany);
-                    break;
-                default:
-                    return res.status(400).json({ error: "Geçersiz rapor türü. 'pdf' veya 'excel' olmalıdır." });
+                const fileName = reportType === "pdf" ? "SirketSensörRaporu.pdf" : "SirketSensörRaporu.xlsx";
+                res.setHeader(
+                    "Content-Type",
+                    reportType === "pdf"
+                        ? "application/pdf"
+                        : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                );
+                res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+                return res.sendFile(filePath);
+            } catch (err) {
+                console.error("Rapor oluşturulamadı:", err);
+                return res.status(500).json({ error: `Rapor oluşturulamadı: ${err.message}` });
             }
-
-            return res.status(200).json({ message: "Rapor başarıyla oluşturuldu.", result });
-        } catch (err) {
-            return res.status(500).json({ error: `Rapor oluşturulamadı: ${err.message}` });
         }
-    }
 
-    return res.status(200).json({
-        groupedLengths,
-        company,
-        groupedCompany
-    });
-}
+        return res.status(200).json({ groupedLengths, companies, groupedCompany });
+    } catch (error) {
+        console.error("getCompanySensorStats hata:", error.message);
+        return res.status(500).json({ error: "Beklenmeyen bir hata oluştu." });
+    }
+};
 
 //sensor loglarını getirir actiona göre
 const getSensorLogToAction = async (req, res) => {
@@ -345,31 +404,58 @@ const getSensorLogToAction = async (req, res) => {
     }
 };
 
-const getSensorLog = async (req, res) => {
-    const user = req.user;
-    if (!user) {
-        return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
-    }
 
+
+
+const getSensorLog = async (req, res) => {
     try {
-        const logs = await sensorServices.getSensorLog(user.id, user.role);
-        if (logs.length === 0) {
-            return res.status(404).json({ message: "Belirtilen 'action' değeriyle eşleşen log bulunamadı." });
+        const user = req.user;
+        const reportType = req.query.reportType;
+
+        if (!user) {
+            return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
         }
 
-        return res.status(200).json({
-            success: true,
-            logs
-        });
+        const logs = await sensorServices.getSensorLog(user.id, user.role);
+
+        if (!logs || (!logs.summary && !logs.details)) {
+            return res.status(404).json({ message: "Log bulunamadı." });
+        }
+
+        if (reportType) {
+            try {
+                let filePath;
+                if (reportType === "pdf") {
+                    filePath =filePath = await pdf.generatePDFSensorLog(logs.details, logs.summary);
+                } else if (reportType === "excel") {
+                    filePath = await excel.generateExcelSensorLog(logs);
+                } else {
+                    throw new Error("Geçersiz rapor türü.");
+                }
+
+                const absolutePath = path.resolve(filePath);
+                const fileName = path.basename(filePath);
+                res.setHeader(
+                    "Content-Type",
+                    reportType === "pdf"
+                        ? "application/pdf"
+                        : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                );
+                res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+                return res.sendFile(absolutePath);
+            } catch (err) {
+                console.error("Rapor oluşturulamadı:", err.message);
+                return res.status(500).json({ error: `Rapor oluşturulamadı: ${err.message}` });
+            }
+        }
+
+        return res.status(200).json({ success: true, logs });
     } catch (error) {
-        console.error("Hata:", error);
-        return res.status(500).json({
-            success: false,
-            error: "Loglar getirilirken bir hata oluştu.",
-            details: error.message,
-        });
+        console.error("getSensorLog hata:", error.message);
+        return res.status(500).json({ error: "Beklenmeyen bir hata oluştu." });
     }
 };
 
 
-module.exports={getTotalSensors,getIsActive,getAllCompaies,getSensorsTypesCount,getCompanySensorStats,getSensorLog,getSensorLogToAction};
+
+module.exports={getTotalSensors,getIsActive,getAllCompanies,getSensorsTypesCount,getCompanySensorStats,getSensorLog,getSensorLogToAction};
