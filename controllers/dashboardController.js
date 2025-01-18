@@ -285,7 +285,7 @@ const getCompanySensorStats= async (req,res)=>{
 }
 
 //sensor loglarını getirir actiona göre
-const getSensorLog = async (req, res) => {
+const getSensorLogToAction = async (req, res) => {
     const user = req.user;
     const reportType = req.query.reportType || req.params.reportType;
     if (!user) {
@@ -345,5 +345,31 @@ const getSensorLog = async (req, res) => {
     }
 };
 
+const getSensorLog = async (req, res) => {
+    const user = req.user;
+    if (!user) {
+        return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
+    }
 
-module.exports={getTotalSensors,getIsActive,getAllCompaies,getSensorsTypesCount,getCompanySensorStats,getSensorLog};
+    try {
+        const logs = await sensorServices.getSensorLog(user.id, user.role);
+        if (logs.length === 0) {
+            return res.status(404).json({ message: "Belirtilen 'action' değeriyle eşleşen log bulunamadı." });
+        }
+
+        return res.status(200).json({
+            success: true,
+            logs
+        });
+    } catch (error) {
+        console.error("Hata:", error);
+        return res.status(500).json({
+            success: false,
+            error: "Loglar getirilirken bir hata oluştu.",
+            details: error.message,
+        });
+    }
+};
+
+
+module.exports={getTotalSensors,getIsActive,getAllCompaies,getSensorsTypesCount,getCompanySensorStats,getSensorLog,getSensorLogToAction};
