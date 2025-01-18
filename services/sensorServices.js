@@ -77,7 +77,7 @@ const getTypes = async () => {
 
 //actiona göre sensör logları getirilir.
 //getirilen sensör loglarında kullancılıarın sahip olduğu sensör kontrolü yapılmalı.?
-const getSensorLog = async (userId,role,action) => {
+const getSensorLogToAction = async (userId,role,action) => {
     try {
         // `action` değeri kontrolü
         if (!action || !userId) {
@@ -121,11 +121,94 @@ const getSensorLog = async (userId,role,action) => {
     }
 };
 
+const getSensorLog = async (userId,role) => {
+    try {
+        // `action` değeri kontrolü
+        if (!userId || (role==="manager"||role=="personal")) {
+            throw new Error("Yetkisiz erişim");
+        }
+
+        let sensors;
+        let sensorIds;
+        if(role==="administrator"){
+            sensors = (await getAllSensors()).sensors;
+            sensorIds = sensors.map(sensor => sensor.id);
+        }
+
+        // Veritabanından `action` değerine göre logları getir
+        const logs = await SensorLogs.findAll({
+            where: {
+                sensorId: sensorIds
+            },
+            order: [['timestamp', 'DESC']], // En son loglar önce gelsin
+        });
+
+        // Log bulunamadığında
+        if (logs.length === 0) {
+            throw new Error("Belirtilen 'action' değeriyle eşleşen log bulunamadı.");
+        }
+
+        const logsWithSensorsName = (logs, sensors) => {
+            // logs içindeki sensorId'leri sensors listesindeki name ile değiştiriyoruz
+            return logs.map(log => {
+                const sensor = sensors.find(sensor => sensor.id === log.dataValues.sensorId);
+                if (sensor) {
+                    return {
+                        ...log.dataValues, // Orijinal log verilerini kopyala
+                        sensorName: sensor.name, // sensorId yerine name ekle
+                    };
+                } else {
+                    return log.dataValues; // Eşleşme olmazsa olduğu gibi bırak
+                }
+            });
+        };
+
+
+        const processedLogs = logsWithSensorsName(logs, sensors);
+
+        console.log(processedLogs);
+
+        const groupedLogs = processedLogs.reduce(
+            (acc, log) => {
+                const action = log.action;
+
+                // Eğer details kısmında action yoksa başlat
+                if (!acc.details[action]) {
+                    acc.details[action] = [];
+                }
+
+                // Log'u details kısmına ekle
+                acc.details[action].push(log);
+
+                // Summary kısmında action sayısını artır
+                acc.summary[action] = (acc.summary[action] || 0) + 1;
+
+                return acc;
+            },
+            { summary: {}, details: {} }
+        );
+
+
+
+        // Logları başarıyla döndür
+        return {
+            summary: groupedLogs.summary,
+            details: groupedLogs.details,
+        };
+    } catch (err) {
+        console.error("Hata:", err);
+        return {
+            error: err.message,
+        };
+    }
+};
+
 module.exports = {
     getAllSensors,
     getSensorsByIds,
     getSensorIdsByOwner,
     getSensorByOwner,
     getTypes,
-    getSensorLog
+    getSensorLog,
+    getSensorLogToAction
 };

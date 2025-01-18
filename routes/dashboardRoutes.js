@@ -8,5 +8,6 @@ router.get('/getIsActive',authenticateToken,dashboardController.getIsActive);
 router.get('/getAllCompanies',authenticateToken,dashboardController.getAllCompaies);
 router.get('/getSensorTypeClass',authenticateToken,dashboardController.getSensorsTypesCount);
 router.get('/getCompanySensorStats',authenticateToken,dashboardController.getCompanySensorStats);
+router.get('/getSensorLogToAction',authenticateToken,dashboardController.getSensorLogToAction);
 router.get('/getSensorLogs',authenticateToken,dashboardController.getSensorLog);
 module.exports = router;
