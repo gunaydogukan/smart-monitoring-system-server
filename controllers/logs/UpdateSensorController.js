@@ -30,7 +30,7 @@ async function updateSensor(req, res) {
             sensorId,
             oldData: JSON.stringify(oldData), // Eski verileri JSON formatına çevir
             newData: JSON.stringify(updatedData), // Yeni verileri JSON formatına çevir
-            action: 'update', // İşlem türü
+            action: 'sensör_güncellemesi', // İşlem türü
         });
 
         // Başarılı yanıt
@@ -101,7 +101,7 @@ const handleSensorOperations = async (req, res) => {
                     sensorId: sensor.sensor_id,
                     oldData: JSON.stringify({ sensorId: sensor.sensor_id, owner: userId }),
                     newData: JSON.stringify({ owner: otherManagersWithSameSensor.length > 0 ? otherManagersWithSameSensor[0].sensor_owner : null }),
-                    action: "unlink_sensor_manager",
+                    action: "yöneticiden_sensör_çıkartma",
                     timestamp: new Date(),
                 });
             }
@@ -122,7 +122,7 @@ const handleSensorOperations = async (req, res) => {
                     sensorId: sensor.sensor_id,
                     oldData: JSON.stringify({ sensorId: sensor.sensor_id, owner: userId }),
                     newData: JSON.stringify({ owner: null }),
-                    action: "unlink_sensor_personal",
+                    action: "personelden_sensör_çıkartma",
                     timestamp: new Date(),
                 });
             }
@@ -260,7 +260,7 @@ const assignSensorsToManager = async (req, res) => {
                 sensorId: undefinedSensor.originalSensorId,
                 oldData,
                 newData,
-                action: 'assign',
+                action: 'yöneticilere_sensör_tanımlama',
                 timestamp: new Date(),
             });
 
@@ -318,7 +318,7 @@ async function isActiveForIP(req, res) {
             sensorId: sensor.id,
             oldData: JSON.stringify(oldData),
             newData: JSON.stringify(newData),
-            action: isActive ? "Sensor Activated" : "Sensor Deactivated",
+            action: isActive ? "Sensör_aktifleştirildi" : "Sensör_pasifleştirildi",
             timestamp: new Date(),
         });
 
@@ -384,7 +384,7 @@ const assignSensorsToUser = async (req, res) => {
                         sensorId,
                         oldData: JSON.stringify({ sensor_owner: null, role: null }), // Eski veri
                         newData: JSON.stringify({ sensor_owner: userId, role: role }), // Yeni veri
-                        action: `${role}_sensor_tanımlama`,
+                        action: `${role}_sensör_tanımlama`,
                     });
                 }
             });
@@ -443,7 +443,7 @@ const removeSensors = async (req, res) => {
                 sensor_id: { [Op.in]: sensorIds },
             },
         });
-        console.log("sİLİNECEK SENSÖRler = ",sensorsToRemove);
+
 
         if (!sensorsToRemove || sensorsToRemove.length === 0) {
             return res.status(404).json({ error: "Silinecek sensörler bulunamadı." });
@@ -453,7 +453,7 @@ const removeSensors = async (req, res) => {
             sensorId: sensor.id,
             oldData: JSON.stringify(sensor),
             newData: JSON.stringify({ owner_id: null, role: null }),
-            action: `Sensor Remove ${req.user.role}`, // İşlem türü
+            action: `${req.user.role}'den_sensör_çıkarma`, // İşlem türü
         }));
 
         //sensör bilgileri silinir.
