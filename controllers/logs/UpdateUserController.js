@@ -43,7 +43,7 @@ const updateUser = async (req, res) => {
             userId: id,
             oldData: JSON.stringify(oldData), // Eski bilgileri JSON olarak kaydet
             newData: JSON.stringify({ name, lastname, email, phone }), // Yeni bilgileri JSON olarak kaydet
-            action: 'update_profile',
+            action: 'Profil_Güncelleme',
         });
 
         res.status(200).json({ message: 'Profil başarıyla güncellendi.', user });
@@ -88,7 +88,7 @@ const modifyUserDetails = async (req, res) => {
             userId: id,
             oldData: JSON.stringify(oldData),
             newData: JSON.stringify(newData),
-            action: 'modify_user_details',
+            action: 'Kullanıcı_Bilgileri_Güncellemesi',
         });
 
         res.status(200).json({ message: 'Kullanıcı başarıyla güncellendi.', user: updatedUser });
@@ -127,7 +127,7 @@ const deactivateUser = async (req, res) => {
                     userId: id,
                     oldData: JSON.stringify(oldData),
                     newData: JSON.stringify(newData),
-                    action: 'deactivate_personal',
+                    action: 'Personel_pasif_yapıldı',
                 });
             }
 
@@ -196,7 +196,7 @@ const deactivateUser = async (req, res) => {
                 userId: id,
                 oldData: JSON.stringify(oldData),
                 newData: JSON.stringify(newData),
-                action: 'deactivate_manager',
+                action: 'Yönetici_Pasif_yapıldı',
             });
 
             await UndefinedUser.create({
@@ -251,7 +251,7 @@ const activateUser = async (req, res) => {
                 userId: id,
                 oldData: JSON.stringify(oldData),
                 newData: JSON.stringify(newData),
-                action: 'activate_personal',
+                action: 'Personel_Aktif_Yapıldı',
             });
         }
         if(user.role === "manager"){
@@ -259,7 +259,7 @@ const activateUser = async (req, res) => {
                 userId: id,
                 oldData: JSON.stringify(oldData),
                 newData: JSON.stringify(newData),
-                action: 'activate_manager',
+                action: 'Yönetici_Aktif_Yapıldı',
             });
         }
 
@@ -275,7 +275,6 @@ const activateUser = async (req, res) => {
         res.status(500).json({ message: 'Bir hata oluştu.' });
     }
 };
-
 
 const getUndefinedUsersAndActiveManagers = async (req, res) => {
     const { companyCode } = req.params;
@@ -362,8 +361,6 @@ const withOutComapnyCodegetUndefinedUsersAndActiveManagers = async (req, res) =>
             })
         );
 
-        console.log("UndefinedUserDetails Users Data:", undefinedUserDetails);
-
         // Yanıtı döndür
         res.status(200).json({
             activeManagers,
@@ -379,10 +376,6 @@ const withOutComapnyCodegetUndefinedUsersAndActiveManagers = async (req, res) =>
 //tanımsız personel tanımlama işlemi
 const assignPersonalsToManager = async (req, res) => {
     const { managerId, personalIds } = req.body;
-
-    // Gelen verileri loglayarak kontrol edelim
-    console.log("Gelen managerId:", managerId);
-    console.log("Gelen personalIds:", personalIds);
 
     // Gelen verinin türünü ve değerlerini kontrol et
     if (
@@ -445,7 +438,7 @@ const assignPersonalsToManager = async (req, res) => {
             userId: validatedManagerId,
             oldData: JSON.stringify(oldPersonals),
             newData: JSON.stringify(newPersonals),
-            action: "assign_personals_to_manager",
+            action: "Personelleri_Yoneticiye_Atama",
         });
 
         // Başarılı yanıt döndür
@@ -523,7 +516,7 @@ const assignManager = async (req, res) => {
             userId: req.user.id, // İşlemi yapan kullanıcı
             oldData: JSON.stringify(oldData),
             newData: JSON.stringify(newData),
-            action: 'assign_manager',
+            action: 'Yönetici_Atama',
         });
 
         //sensör Log kaydı oluştulur
@@ -534,7 +527,7 @@ const assignManager = async (req, res) => {
                 sensorId: oldSensor.sensor_id, // Sensör ID
                 oldData: JSON.stringify(oldSensor), // Eski sensör verilerini JSON'a çevir
                 newData: JSON.stringify(newSensor), // Yeni sensör verilerini JSON'a çevir
-                action: 'Yeni Menejer ataması.', // İşlem türü (örnek: 'update')
+                action: 'Yeni_Menejer_ataması.', // İşlem türü (örnek: 'update')
             })
 
         });

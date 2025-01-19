@@ -2,6 +2,7 @@ const Sensors = require('../models/sensors/Sensors');
 const SensorOwner = require('../models/sensors/sensorOwner');
 const Type = require("../models/sensors/SensorTypes");
 const SensorLogs = require('../models/logging/sensorsLog');
+const UserLogs = require('../models/logging/userLog');
 
 // Tüm sensörleri alma
 const getAllSensors = async () => {
@@ -163,10 +164,7 @@ const getSensorLog = async (userId,role) => {
             });
         };
 
-
         const processedLogs = logsWithSensorsName(logs, sensors);
-
-
 
         const groupedLogs = processedLogs.reduce(
             (acc, log) => {
@@ -188,8 +186,6 @@ const getSensorLog = async (userId,role) => {
             { summary: {}, details: {} }
         );
 
-
-
         // Logları başarıyla döndür
         return {
             summary: groupedLogs.summary,
@@ -203,6 +199,96 @@ const getSensorLog = async (userId,role) => {
     }
 };
 
+const getUserLog = async (userId, role) => {
+    try {
+        // Role kontrolü
+        if (!userId || (role === "manager" || role === "personal")) {
+            throw new Error("Yetkisiz erişim");
+        }
+
+        // Logları veritabanından çekme
+        const logs = await UserLogs.findAll({
+            order: [['timestamp', 'DESC']], // Logları zamana göre sıralıyoruz
+        });
+
+        if (logs.length === 0) {
+            throw new Error("Kullanıcı logları bulunamadı.");
+        }
+
+        // Logları gruplama ve özet oluşturma
+        const groupedLogs = logs.reduce(
+            (acc, log) => {
+                const action = log.dataValues.action;
+
+                if (!acc.logs[action]) {
+                    acc.logs[action] = {
+                        total: 0,
+                        logs: [],
+                    };
+                }
+
+                // Farklılıkları hesapla
+                const differences = getDifferences(log.dataValues.oldData, log.dataValues.newData);
+
+                // Gereksiz alanları çıkar ve sadeleştir
+                const { id, userId, action: logAction, timestamp } = log.dataValues;
+
+                acc.logs[action].logs.push({
+                    id,
+                    userId,
+                    action: logAction,
+                    timestamp,
+                    differences,
+                });
+                acc.logs[action].total += 1;
+
+                // Özet güncelle
+                acc.summary[action] = (acc.summary[action] || 0) + 1;
+
+                return acc;
+            },
+            { logs: {}, summary: {} }
+        );
+
+        // Sonuçları döndür
+        return {
+            groupedLogs,
+        };
+    } catch (error) {
+        console.error("Hata:", error);
+        return {
+            error: error.message,
+        };
+    }
+};
+
+// Farklılıkları bulmak için ayrı bir metot
+const getDifferences = (oldData, newData) => {
+    const oldObj = JSON.parse(oldData);
+    const newObj = JSON.parse(newData);
+
+    const differences = {};
+    // `user` nesnesini ekle
+    differences.user = {
+        name: newObj.name || null,
+        lastname: newObj.lastname || null,
+    };
+
+    for (const key in newObj) {
+        // `updatedAt` alanını hariç tut
+        if (key === "updatedAt") {
+            continue;
+        }
+
+        if (oldObj[key] !== newObj[key]) {
+            differences[key] = { oldValue: oldObj[key], newValue: newObj[key] };
+        }
+    }
+
+    return differences;
+};
+
+
 module.exports = {
     getAllSensors,
     getSensorsByIds,
@@ -210,5 +296,6 @@ module.exports = {
     getSensorByOwner,
     getTypes,
     getSensorLog,
-    getSensorLogToAction
+    getSensorLogToAction,
+    getUserLog
 };

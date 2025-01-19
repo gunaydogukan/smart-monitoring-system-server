@@ -33,7 +33,12 @@ const getTotalSensors = async (req, res) => {
         }
 
         if (!sensors || sensors.length === 0) {
-            return res.status(404).json({ error: "Hiç sensör bulunamadı." });
+            return res.status(200).json({ totalSensors: 0,
+                activeSensorsLen: 0,
+                passiveSensorsLen: 0,
+                activeSensors,
+                passiveSensors,
+                sensors, });
         }
 
         sensors.forEach(sensor => {
@@ -404,15 +409,12 @@ const getSensorLogToAction = async (req, res) => {
     }
 };
 
-
-
-
 const getSensorLog = async (req, res) => {
     try {
         const user = req.user;
         const reportType = req.query.reportType;
 
-        if (!user) {
+        if (!user || user.role!=="administrator") {
             return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
         }
 
@@ -456,6 +458,34 @@ const getSensorLog = async (req, res) => {
     }
 };
 
+const getUserLog = async (req, res) => {
+    try {
+        const user = req.user;
+
+        if (!user || user.role!=="administrator") {
+            return res.status(403).json({ error: "Bu işlemi yapmak için yetkiniz yok." });
+        }
+
+        const { groupedLogs } = await sensorServices.getUserLog(user.id, user.role);
+
+        if (!groupedLogs) {
+            return res.status(404).json({ message: "Log bulunamadı." });
+        }
+
+        // Gereksiz katmanları kaldırarak daha okunaklı bir yapı oluştur
+        const { logs, summary } = groupedLogs;
+
+        return res.status(200).json({
+            success: true,
+            summary: summary, // İşlem türlerine göre özet
+            logs: logs, // Detaylı loglar
+        });
+    } catch (error) {
+        console.error("getSensorLog hata:", error.message);
+        return res.status(500).json({ error: "Beklenmeyen bir hata oluştu." });
+    }
+};
 
 
-module.exports={getTotalSensors,getIsActive,getAllCompanies,getSensorsTypesCount,getCompanySensorStats,getSensorLog,getSensorLogToAction};
+
+module.exports={getTotalSensors,getIsActive,getAllCompanies,getSensorsTypesCount,getCompanySensorStats,getSensorLog,getSensorLogToAction,getUserLog};
