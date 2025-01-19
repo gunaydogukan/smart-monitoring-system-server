@@ -10,4 +10,6 @@ router.get('/getSensorTypeClass',authenticateToken,dashboardController.getSensor
 router.get('/getCompanySensorStats',authenticateToken,dashboardController.getCompanySensorStats);
 router.get('/getSensorLogToAction',authenticateToken,dashboardController.getSensorLogToAction);
 router.get('/getSensorLogs',authenticateToken,dashboardController.getSensorLog);
+router.get('/getUserLogs',authenticateToken,dashboardController.getUserLog);
+
 module.exports = router;

@@ -21,7 +21,7 @@ const port = 5000;
 app.use(
     cors({
         origin: 'http://localhost:3000', // Frontend URL
-        methods: ['GET', 'POST', 'PUT', 'DELETE'], // İzin verilen HTTP yöntemleri
+        methods: ['GET', 'POST', 'PUT', 'DELETE','PATCH'], // İzin verilen HTTP yöntemleri
         allowedHeaders: ['Content-Type', 'Authorization'], // İzin verilen header'lar
         credentials: true, // Eğer cookie veya authorization header gönderilecekse
     })
