@@ -1,28 +1,27 @@
 const Sequelize = require('sequelize');
-const sequelize = require('../config/database');
+const sequelize = require("../../config/database");
 
-
-const neighborhoods = sequelize.define("neighborhoods",{
+const villages = sequelize.define("villages",{
     id: {
         type: Sequelize.INTEGER,
         primaryKey: true,
         autoIncrement: true,
         allowNull: false
     },
-    district_id: {
+    neighborhood_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-            model:"districts",
+            model:"neighborhoods",
             key:"id"
         },
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     },
-    neighborhood:{
+    village:{
         type: Sequelize.STRING,
         allowNull: false
     }
 },{ timestamps: true });
 
-module.exports = neighborhoods;
+module.exports = villages;

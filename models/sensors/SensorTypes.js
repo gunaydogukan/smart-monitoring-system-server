@@ -1,5 +1,5 @@
 const Sequelize = require("sequelize");
-const sequelize = require("../config/database");
+const sequelize = require("../../config/database");
 
 const Type = sequelize.define("sensors_types_tables", {
         id: {
@@ -12,6 +12,15 @@ const Type = sequelize.define("sensors_types_tables", {
             type: Sequelize.STRING,
             allowNull: false,
             unique:true,
+        },
+        dataCount: {
+            type: Sequelize.INTEGER,
+            allowNull: false,
+            defaultValue: 0,
+        },
+        dataNames: {
+            type: Sequelize.TEXT,
+            allowNull: false,
         },
     }, { timestamps: true });
 

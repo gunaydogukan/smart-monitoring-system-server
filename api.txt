@@ -1,0 +1,114 @@
+//GET
+
+http://localhost:5000/api/sensors/all-sensors
+http://localhost:5000/api/companiesCount
+http://localhost:5000/api/user-sensors
+http://localhost:5000/api/type
+http://localhost:5000/log/data-time-check
+http://localhost:5000/log/IP-controll?datacodes=L004,L005,L006,L007
+
+//POST
+
+
+http://localhost:5000/api/add-new-type
+{
+  "type": "Azot Sensörü",
+  "dataCount": 2,
+  "dataNames": ["nitrogenLevel", "sensorTemperature"]
+}
+
+http://localhost:5000/api/sensor-data
+{
+    "dataCode": "l001",
+    "data": {
+        "sagUstNem": 60.6,
+        "sagUstSıcaklık": 22.3,
+        "sagAltNem": 47.8,
+        "sagAltSıcaklık": 21.9,
+        "solAltNem": 49.2,
+        "solAltSıcaklık": 23.4
+    }
+}
+http://localhost:5000/log/IP-controll
+{
+  "ipAdress": "192.168.1.105",
+  "datacode": "DENEME2"
+}
+
+//http://localhost:5000/api/sensors
+{
+    "datacode": "D001",
+    "name": "Temperature and Humidity Sensor",
+    "lat": 41.7128,
+    "lng": 32.0060,
+    "def": "This sensor measures temperature and humidity levels.",
+    "type": 1,
+    "company_code": "Barü",
+    "creator_id": 1,
+    "village_id": 4
+}
+
+http://localhost:5000/api/type
+{
+        "type": "Yağmur"
+}
+
+//http://localhost:5000/api/companies
+{
+    "code": "74",
+    "name": "Bartın Elektrik Dağıtım",
+    "city_id": 4,
+    "creator_id": 1
+}
+
+//http://localhost:5000/api/address
+{
+    "plate": 34,
+    "city": "İstanbul",
+    "districts": [
+        {
+            "district": "Kadıköy",
+            "neighborhoods": [
+                {
+                    "neighborhood": "Moda",
+                    "villages": [
+                        "Köy 1",
+                        "Köy 2"
+                    ]
+                },
+                {
+                    "neighborhood": "Fikirtepe",
+                    "villages": []
+                }
+            ]
+        },
+        {
+            "district": "Beşiktaş",
+            "neighborhoods": [
+                {
+                    "neighborhood": "Levent",
+                    "villages": [
+                        "Köy 3"
+                    ]
+                }
+            ]
+        }
+    ]
+}
+
+//http://localhost:5000/api/register
+{
+    "name": "Dogukan",
+    "lastname": "Kaya",
+    "email": "dogukan@example.com",
+    "password": "password123",
+    "phone": "1234567890",
+    "role": "personal",
+    "creator_id": null
+}
+
+//http://localhost:5000/api/login
+{
+	"email": "test@example.com",
+	"password": "password"
+}

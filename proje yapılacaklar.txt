@@ -1,0 +1,51 @@
+//YAPILACAKLAR
+
+sensör pasifse map'de o sensör uyarılı gözüksün.
+
+Kullancılar sayfasında manager ve personele basıldığında ilgili kişinin sensör biligleri , vs gözüksün
+sensör çıkart ekleencek
+(sensor İP'bilgileri alınırken daha verimli alınmasına olanak tanı sensör data gibi
+birden fazla sensör bilgileri vs alınıyor bunları tespit et daha düzenle
+)
+Sensör verisinin son verdiği zamanı toplu almak içni soket gerekebilir veya daha verimli bir şey yapılabilir (Maliyet çok)
+
+GRAFİK VERİSİNİN AYLIK OLANLARI KONTROL ET
+Yağmur sensör verisi düzenlenecek
+Veri olmayan grafiklerde hata yerine veri yok yazılacak
+Ana sayfa düzeni
+Web soket
+LOG TABLE (FRONT İÇİN)
+Kurum kontrol sensör eklendikçe oranın db nede eklenecek...
++manager ise kendi kurumunda olan toplam sensör toplam personel ve toplam admin sayısını göreiblir
+Sensör gösteriminde olan pinlerin düzeni
+raporlama (pdf excel)
+kullanıcı fotoğraf ekleme
+tr-eng dil desteği
+Sensör grafiklerine göz at değişebilir düzenlenebilri daha detaylandırılabilir
+Error message page
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+//YAPILAN :
+PERSONEL ÇIKART (yönetici değiştir)
+sensorowner table kurulacak = id , sensorowner , sensorİd
+sensor map gösterimi ve markerı değişti
+SENSOR data table dinamik olarak oluşturuldu
+kurumlar gösterildi
+Kurum eklerken Kurumun şehirini direkt şehirler apisinden alınıyor ve o şehir direkt cites veri tabanına ekleniyor
+Admin - personel eklerken => personeli hangi managere tanımlayacağını seçmeli
++Sensör eklerken kurum seçildikten sonra kurumun , managerleri filtrelensin ve sensör hangi managere tanımlanacaksa o seçilsin (admin seçimi)
++admin personele sensör eklemeyecek... onu manager belirler
+sensordata table için yeni database eklendi sensorData table' lar yeni olan database içerisinde tutuluyor
+60 sensör ve 60 data table eklendi
+SensorChek yeni proje dosyası olarak yapıldı(opsyonel-evrimhoca isteği)
+Kurumlar page'ine kurumlara tıklandığında o kuruma ait olan sensör sayısı , manaager sayısı , personel sayısı gibi bilgiler gözükebilir.. (sadece admin)
+Update , Delete(active,inactive) , loglama yapılacak,
+Sensör Loglama
+İP RENK DÜZENİ
+PERSONEL TANIMLAMA VS LOG
+KULLANICI AKTİF PASİF OLAYI
+SENSÖR PASİF
+IP kontrolü,Sensor data zaman kontrolü yapıldı
+Hatalı veriler gösterilmeyecek ve ortalama hesaplamasından ayrı tutulacak...
+siyah beyaz mod kaldırılacak

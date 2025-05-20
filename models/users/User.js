@@ -1,6 +1,6 @@
-const Sequelize = require("sequelize");
-const sequelize = require('../config/database');
-const Companies = require('../models/companies');
+const Sequelize = require('sequelize');
+const sequelize = require('../../config/database'); // Veritabanı bağlantısı
+//const Companies = require('../users/Companies'); // Şirket modelini içe aktarıyoruz
 
 const User = sequelize.define('users', {
     id: {
@@ -10,29 +10,28 @@ const User = sequelize.define('users', {
         allowNull: false,
     },
     role: {
-        type: Sequelize.ENUM("administrator", "manager", "personal"),
+        type: Sequelize.ENUM('administrator', 'manager', 'personal'),
         allowNull: false,
     },
     creator_id: {
         type: Sequelize.INTEGER,
         allowNull: true,
         references: {
-            model: "users",
-            key: "id",
+            model: 'users',
+            key: 'id',
         },
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
+        onDelete: 'SET NULL',
+        onUpdate: 'CASCADE',
     },
     companyCode: {
         type: Sequelize.STRING,
         allowNull: true,
         references: {
-            model: Companies,
-            key: "code",
+            model: 'Companies',
+            key: 'code',
         },
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-
+        onDelete: 'SET NULL',
+        onUpdate: 'CASCADE',
     },
     name: {
         type: Sequelize.STRING,
@@ -59,9 +58,8 @@ const User = sequelize.define('users', {
     isActive: {
         type: Sequelize.BOOLEAN,
         allowNull: false,
-        defaultValue: true // Varsayılan olarak kayıtlar aktif gelir
-    }
-
-},{ timestamps: true });
+        defaultValue: true,
+    },
+}, { timestamps: true });
 
 module.exports = User;
